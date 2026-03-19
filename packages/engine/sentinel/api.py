@@ -27,6 +27,7 @@ from sentinel.execution.portfolio_router import router as portfolio_router
 from sentinel.governance.router import router as governance_router
 from sentinel.audit.router import router as audit_router
 from sentinel.monitoring.router import router as monitoring_router
+from sentinel.backtest.router import router as backtest_router
 
 logger = structlog.get_logger(__name__)
 
@@ -256,6 +257,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(governance_router)
     app.include_router(audit_router)
     app.include_router(monitoring_router, prefix="/monitoring", tags=["monitoring"])
+    app.include_router(backtest_router, prefix="/backtest", tags=["backtest"])
 
     # Override DB session dependency for all routers that use `db_session_placeholder`
     from sentinel.db.base import db_session_placeholder

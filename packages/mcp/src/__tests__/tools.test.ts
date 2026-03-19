@@ -90,7 +90,7 @@ describe('EngineClient watchlist methods (mocked)', () => {
 
     const result = await client.addSymbols(['AAPL']);
     expect(result).toHaveLength(1);
-    expect(result[0].symbol).toBe('AAPL');
+    expect(result[0]?.symbol).toBe('AAPL');
     expect(client.addSymbols).toHaveBeenCalledWith(['AAPL']);
   });
 
@@ -197,7 +197,7 @@ describe('EngineClient execution methods (mocked)', () => {
     } as any);
 
     expect(result.status).toBe('filled');
-    expect(result.filled_qty).toBe(100);
+    expect((result as any).filled_qty).toBe(100);
   });
 
   it('flattenAll requires reason and returns result', async () => {
@@ -205,7 +205,7 @@ describe('EngineClient execution methods (mocked)', () => {
     vi.mocked(client.flattenAll).mockResolvedValueOnce(mockResult as any);
 
     const result = await client.flattenAll('Emergency exit');
-    expect(result.positions_closed).toBe(2);
+    expect((result as any).positions_closed).toBe(2);
     expect(client.flattenAll).toHaveBeenCalledWith('Emergency exit');
   });
 
@@ -298,7 +298,7 @@ describe('EngineClient regime methods (mocked)', () => {
 
     const result = await client.evaluateRegimeBulk(['AAPL', 'MSFT']);
     expect(Object.keys(result)).toHaveLength(2);
-    expect(result['AAPL'].label).toBe('trending_bull');
+    expect(result['AAPL']?.label).toBe('trending_bull');
   });
 });
 
@@ -325,7 +325,7 @@ describe('EngineClient governance methods (mocked)', () => {
 
     const result = await client.evaluatePromotion('momentum_breakout', 'live_approved');
     expect(result.eligible).toBe(false);
-    expect(result.blocking_criteria).toHaveLength(1);
+    expect((result as any).blocking_criteria).toHaveLength(1);
   });
 
   it('promoteStrategy requires approved_by field', async () => {
@@ -374,7 +374,7 @@ describe('EngineClient audit methods (mocked)', () => {
     vi.mocked(client.getDailySummary).mockResolvedValueOnce(mockSummary as any);
 
     const summary = await client.getDailySummary('2024-01-15');
-    expect(summary.total_trades).toBe(5);
+    expect((summary as any).total_trades).toBe(5);
   });
 
   it('getTradeBlotter requires start and end', async () => {
@@ -392,7 +392,7 @@ describe('EngineClient audit methods (mocked)', () => {
     vi.mocked(client.explainTrade).mockResolvedValueOnce(mockExplanation as any);
 
     const explanation = await client.explainTrade('evt-abc');
-    expect(explanation.decision).toBe('REJECTED');
+    expect((explanation as any).decision).toBe('REJECTED');
   });
 });
 

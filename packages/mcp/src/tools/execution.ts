@@ -1,15 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { AxiosError } from 'axios';
 import type { EngineClient } from '../engine-client.js';
-
-function engineError(err: unknown): string {
-  if (err instanceof AxiosError) {
-    const detail = (err.response?.data as { detail?: string } | undefined)?.detail;
-    return `Engine error: ${detail ?? err.message}`;
-  }
-  return `Unexpected error: ${String(err)}`;
-}
+import { formatToolError as engineError } from '../errors.js';
 
 export function registerExecutionTools(server: McpServer, client: EngineClient): void {
   server.tool(

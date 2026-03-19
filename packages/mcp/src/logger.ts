@@ -3,9 +3,8 @@ import { config } from './config.js';
 
 export const logger = pino({
   level: config.LOG_LEVEL,
-  transport:
-    config.NODE_ENV === 'development'
-      ? { target: 'pino-pretty', options: { colorize: true } }
-      : undefined,
+  ...(config.NODE_ENV === 'development'
+    ? { transport: { target: 'pino-pretty', options: { colorize: true } } }
+    : {}),
   base: { service: 'sentinel-mcp', env: config.NODE_ENV },
 });

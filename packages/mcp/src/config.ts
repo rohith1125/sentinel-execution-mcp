@@ -6,7 +6,7 @@ const ConfigSchema = z.object({
   MCP_TRANSPORT: z.enum(['stdio', 'sse']).default('stdio'),
   MCP_SSE_PORT: z.coerce.number().default(3100),
   LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error']).default('info'),
-  NODE_ENV: z.enum(['development', 'paper', 'live']).default('paper'),
+  NODE_ENV: z.enum(['development', 'paper', 'live', 'test']).default('paper'),
 });
 
 export type Config = z.infer<typeof ConfigSchema>;
