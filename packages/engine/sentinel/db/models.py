@@ -216,6 +216,11 @@ class AuditEvent(Base):
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
 
+    @property
+    def event_id(self) -> str:
+        """Alias for `id` — used by AuditJournal and tests."""
+        return self.id
+
     def __repr__(self) -> str:
         return f"<AuditEvent {self.event_type} {self.symbol} {self.timestamp}>"
 

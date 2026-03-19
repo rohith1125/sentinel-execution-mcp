@@ -55,19 +55,17 @@ class AuditJournal:
         try:
             now = datetime.now(tz=timezone.utc)
             event = AuditEvent(
-                event_id=str(uuid.uuid4()),
                 event_type="trade_decision",
                 symbol=symbol,
                 strategy_id=strategy_id,
-                outcome=decision_outcome.value,
-                explanation=decision_explanation,
-                payload=json.dumps({
-                    "regime_snapshot": regime_snapshot,
-                    "signal_details": signal_details,
-                    "risk_check_results": risk_check_results,
-                    "sizing_details": sizing_details,
-                    "execution_details": execution_details,
-                }),
+                timestamp=now,
+                regime_snapshot=regime_snapshot,
+                signal_details=signal_details,
+                risk_check_results=risk_check_results,
+                decision_outcome=decision_outcome.value,
+                decision_explanation=decision_explanation,
+                sizing_details=sizing_details,
+                execution_details=execution_details,
                 created_at=now,
             )
             self._db.add(event)
@@ -94,17 +92,14 @@ class AuditJournal:
         try:
             now = datetime.now(tz=timezone.utc)
             event = AuditEvent(
-                event_id=str(uuid.uuid4()),
                 event_type="execution_outcome",
                 symbol=outcome.get("symbol", ""),
                 strategy_id=outcome.get("strategy_id", ""),
-                outcome=outcome.get("status", "unknown"),
-                explanation=outcome.get("explanation", ""),
-                parent_event_id=audit_event_id,
-                payload=json.dumps({
-                    "execution_details": execution_details,
-                    "outcome": outcome,
-                }),
+                timestamp=now,
+                decision_outcome=outcome.get("status", "unknown"),
+                decision_explanation=outcome.get("explanation", ""),
+                execution_details={"linked_event_id": audit_event_id, **execution_details},
+                outcome=outcome,
                 created_at=now,
             )
             self._db.add(event)
@@ -124,18 +119,13 @@ class AuditJournal:
         try:
             now = datetime.now(tz=timezone.utc)
             event = AuditEvent(
-                event_id=str(uuid.uuid4()),
                 event_type="risk_halt",
                 symbol=affected_scope,
                 strategy_id="",
-                outcome="halted",
-                explanation=reason,
-                payload=json.dumps({
-                    "operator": operator,
-                    "affected_scope": affected_scope,
-                    "reason": reason,
-                    "halted_at": now.isoformat(),
-                }),
+                timestamp=now,
+                decision_outcome="halted",
+                decision_explanation=reason,
+                outcome={"operator": operator, "affected_scope": affected_scope, "reason": reason},
                 created_at=now,
             )
             self._db.add(event)
@@ -162,19 +152,13 @@ class AuditJournal:
         try:
             now = datetime.now(tz=timezone.utc)
             event = AuditEvent(
-                event_id=str(uuid.uuid4()),
                 event_type="strategy_promotion",
                 symbol="",
                 strategy_id=strategy_name,
-                outcome=f"{from_state}_to_{to_state}",
-                explanation=f"Strategy '{strategy_name}' promoted from {from_state} to {to_state} by {operator}",
-                payload=json.dumps({
-                    "strategy_name": strategy_name,
-                    "from_state": from_state,
-                    "to_state": to_state,
-                    "operator": operator,
-                    "promoted_at": now.isoformat(),
-                }),
+                timestamp=now,
+                decision_outcome=f"{from_state}_to_{to_state}",
+                decision_explanation=f"Strategy '{strategy_name}' promoted from {from_state} to {to_state} by {operator}",
+                outcome={"strategy_name": strategy_name, "from_state": from_state, "to_state": to_state, "operator": operator},
                 created_at=now,
             )
             self._db.add(event)
@@ -197,54 +181,35 @@ class AuditJournal:
         """
         try:
             from sqlalchemy import select
-            stmt = select(AuditEvent).where(AuditEvent.event_id == audit_event_id)
+            stmt = select(AuditEvent).where(AuditEvent.id == audit_event_id)
             result = await self._db.execute(stmt)
             event = result.scalar_one_or_none()
 
             if event is None:
                 return {"error": f"Audit event '{audit_event_id}' not found"}
 
-            payload = {}
-            if event.payload:
-                try:
-                    payload = json.loads(event.payload)
-                except json.JSONDecodeError:
-                    payload = {}
-
-            risk_checks = payload.get("risk_check_results", [])
+            risk_checks = event.risk_check_results or []
             passed_checks = [r for r in risk_checks if r.get("passed")]
             failed_checks = [r for r in risk_checks if not r.get("passed")]
 
             explanation: dict = {
-                "event_id": event.event_id,
+                "event_id": event.id,
                 "event_type": event.event_type,
                 "symbol": event.symbol,
                 "strategy": event.strategy_id,
-                "outcome": event.outcome,
+                "outcome": event.decision_outcome,
                 "recorded_at": event.created_at.isoformat() if event.created_at else None,
-                "decision_explanation": event.explanation,
-                "signal": payload.get("signal_details", {}),
-                "regime": payload.get("regime_snapshot", {}),
+                "decision_explanation": event.decision_explanation,
+                "signal": event.signal_details or {},
+                "regime": event.regime_snapshot or {},
                 "risk_assessment": {
                     "passed_checks": passed_checks,
                     "failed_checks": failed_checks,
                     "total_checks": len(risk_checks),
                 },
-                "sizing": payload.get("sizing_details", {}),
-                "execution": payload.get("execution_details", {}),
+                "sizing": event.sizing_details or {},
+                "execution": event.execution_details or {},
             }
-
-            # Fetch linked execution outcome events
-            stmt2 = select(AuditEvent).where(
-                AuditEvent.parent_event_id == audit_event_id,
-                AuditEvent.event_type == "execution_outcome",
-            )
-            result2 = await self._db.execute(stmt2)
-            outcome_events = list(result2.scalars().all())
-            if outcome_events:
-                explanation["execution_outcomes"] = [
-                    json.loads(e.payload) if e.payload else {} for e in outcome_events
-                ]
 
             return explanation
         except Exception:

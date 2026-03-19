@@ -202,12 +202,11 @@ class GovernanceService:
         strategy.updated_at = now
 
         promotion = StrategyPromotion(
-            strategy_name=strategy_name,
+            strategy_id=strategy.id,
             from_state=from_state,
             to_state=target_state.value,
             approved_by=approved_by,
             notes=notes,
-            promoted_at=now,
         )
         self._db.add(promotion)
         await self._db.flush()
@@ -258,12 +257,11 @@ class GovernanceService:
         strategy.updated_at = now
 
         promotion = StrategyPromotion(
-            strategy_name=strategy_name,
+            strategy_id=strategy.id,
             from_state=from_state,
             to_state=target.value,
             approved_by=operator,
             notes=reason,
-            promoted_at=now,
         )
         self._db.add(promotion)
         await self._db.flush()

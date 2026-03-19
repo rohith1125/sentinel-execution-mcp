@@ -40,7 +40,7 @@ async def test_evaluate_promotion_not_eligible_no_trades(db_session):
     )
 
     eligible, evaluation = await svc.evaluate_promotion(
-        "test_strat_2", StrategyState.RESEARCH
+        "test_strat_2", StrategyState.BACKTEST_APPROVED
     )
 
     assert not eligible
@@ -64,7 +64,7 @@ async def test_promote_raises_if_criteria_not_met(db_session):
     with pytest.raises(GovernanceError):
         await svc.promote_strategy(
             strategy_name="test_strat_3",
-            target_state=StrategyState.RESEARCH,
+            target_state=StrategyState.BACKTEST_APPROVED,
             approved_by="human_trader",
         )
 
@@ -85,7 +85,7 @@ async def test_live_promotion_requires_human_approver(db_session):
     with pytest.raises(GovernanceError, match="human approver"):
         await svc.promote_strategy(
             strategy_name="test_strat_4",
-            target_state=StrategyState.LIVE,
+            target_state=StrategyState.LIVE_APPROVED,
             approved_by="system",
         )
 

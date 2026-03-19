@@ -37,7 +37,7 @@ async def test_record_trade_decision_creates_record(db_session):
     assert event.event_id is not None
     assert event.symbol == "AAPL"
     assert event.event_type == "trade_decision"
-    assert event.outcome == DecisionOutcome.APPROVED.value
+    assert event.decision_outcome == DecisionOutcome.APPROVED.value
 
 
 # ---------------------------------------------------------------------------
