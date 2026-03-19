@@ -209,7 +209,7 @@ class TestMaxDrawdown:
         dd_pct, dd_dur = compute_max_drawdown(equity)
         expected = (120 - 90) / 120  # 0.25
         assert abs(dd_pct - expected) < 1e-9, f"Expected {expected}, got {dd_pct}"
-        assert dd_dur == 1  # 1 bar from peak (idx 1) to trough (idx 2)
+        assert dd_dur == 2  # 2 bars below peak: idx 2 (trough) and idx 3 (partial recovery)
 
     def test_max_drawdown_zero_for_monotonic_increase(self) -> None:
         equity = [Decimal(str(v)) for v in [100, 110, 120, 130, 140]]

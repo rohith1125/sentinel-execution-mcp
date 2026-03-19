@@ -133,7 +133,7 @@ def compute_stats(
 
     sharpe = compute_sharpe(returns)
     sortino = compute_sortino(returns)
-    calmar = float(net_profit) / (config.initial_capital * Decimal(str(max_dd_pct))) if max_dd_pct > 0 else 0.0
+    calmar = float(net_profit) / float(config.initial_capital * Decimal(str(max_dd_pct))) if max_dd_pct > 0 else 0.0
 
     return BacktestStats(
         total_trades=total,
@@ -166,7 +166,7 @@ def compute_sharpe(returns: np.ndarray, periods_per_year: int = 252) -> float:
     if len(returns) < 2:
         return 0.0
     std = float(np.std(returns, ddof=1))
-    if std == 0:
+    if std < 1e-10:
         return 0.0
     mean = float(np.mean(returns))
     return float(mean / std * np.sqrt(periods_per_year))
