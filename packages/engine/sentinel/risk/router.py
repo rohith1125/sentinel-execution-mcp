@@ -65,6 +65,73 @@ async def get_kill_switch(
     return _kill_switch_to_dict(state)
 
 
+class ValidateRequest(BaseModel):
+    symbol: str
+    side: str
+    shares: int
+    entry_price: float
+    stop_price: float
+    strategy_name: str
+
+
+@router.post("/validate")
+async def validate_trade(
+    body: ValidateRequest,
+    request: Request,
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> dict:
+    from decimal import Decimal
+    from sentinel.domain.types import OrderSide
+    from sentinel.market.mock import MockProvider
+    from sentinel.market.service import MarketDataService
+    from sentinel.risk.firewall import PortfolioState, RiskFirewall
+
+    fw = _get_firewall(request, settings)
+
+    # Build a mock snapshot for the symbol
+    mock_svc = MarketDataService(providers={"mock": MockProvider(seed=42)}, primary="mock")
+    try:
+        snapshot = await mock_svc.get_snapshot(body.symbol)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Market data error: {exc}")
+
+    portfolio_state = PortfolioState(
+        account_value=Decimal("100000"),
+        cash=Decimal("100000"),
+        positions={},
+        realized_pnl_today=Decimal("0"),
+        realized_pnl_week=Decimal("0"),
+        unrealized_pnl=Decimal("0"),
+        gross_exposure=Decimal("0"),
+        open_position_count=0,
+        recent_trades=[],
+    )
+
+    try:
+        side = OrderSide(body.side.lower())
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
+    assessment = await fw.assess(
+        symbol=body.symbol,
+        side=side,
+        proposed_shares=body.shares,
+        entry_price=Decimal(str(body.entry_price)),
+        stop_price=Decimal(str(body.stop_price)),
+        strategy_name=body.strategy_name,
+        snapshot=snapshot,
+        portfolio_state=portfolio_state,
+    )
+
+    return {
+        "approved": assessment.passed,
+        "blocking_checks": assessment.blocking_checks,
+        "warning_checks": assessment.warning_checks,
+        "checks_run": len(assessment.results),
+        "assessed_at": assessment.assessed_at.isoformat(),
+    }
+
+
 @router.post("/halt/engage")
 async def engage_halt(
     body: HaltRequest,

@@ -20,10 +20,13 @@ router = APIRouter(prefix="/execution", tags=["execution"])
 
 def _get_paper_broker(request: Request, settings: Settings) -> Any:
     from sentinel.execution.paper import PaperBroker
+    from sentinel.market.mock import MockProvider
+    from sentinel.market.service import MarketDataService
     redis = getattr(request.app.state, "redis", None)
     if redis is None:
         raise HTTPException(status_code=503, detail="Redis unavailable — paper broker requires Redis")
-    return PaperBroker(settings=settings, redis_client=redis)
+    market_service = MarketDataService(providers={"mock": MockProvider(seed=42)}, primary="mock", redis_client=redis)
+    return PaperBroker(settings=settings, market_service=market_service, redis=redis)
 
 
 class PaperOrderRequest(BaseModel):

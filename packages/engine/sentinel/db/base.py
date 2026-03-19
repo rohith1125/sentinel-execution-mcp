@@ -51,6 +51,12 @@ def get_session_factory(settings: Settings) -> async_sessionmaker[AsyncSession]:
     return _session_factory
 
 
+async def db_session_placeholder() -> AsyncGenerator[AsyncSession, None]:
+    """Named placeholder for FastAPI dependency override. Never call directly."""
+    raise RuntimeError("db_session_placeholder was not overridden")
+    yield  # make it a generator
+
+
 async def get_session(settings: Settings) -> AsyncGenerator[AsyncSession, None]:
     """FastAPI dependency that yields an async DB session."""
     factory = get_session_factory(settings)

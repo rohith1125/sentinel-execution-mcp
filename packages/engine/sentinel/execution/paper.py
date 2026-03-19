@@ -3,16 +3,19 @@ PaperBroker — full paper trading simulator.
 
 Simulates realistic execution:
 - Market orders: fill at ask (buy) or bid (sell) with slippage
-- Limit orders: fill when price crosses limit (next bar)
+- Limit orders: fill when price crosses limit (next bar, not same bar)
 - Stop orders: trigger when price hits stop, then fill at market
+- Gap risk: stop orders that gap through their trigger fill at gap open price
 - Configurable slippage_bps
-- Realistic partial fills for large orders (> 1% of avg volume)
+- Realistic partial fills for large orders (> 2% of avg volume)
+- Partial fill size: random 40-80% of order, remainder queued for next bar
 - In-memory order book with Redis persistence
 """
 from __future__ import annotations
 
 import json
 import logging
+import random
 import uuid
 from datetime import datetime, timezone
 from decimal import Decimal, ROUND_HALF_UP
@@ -33,8 +36,8 @@ _PAPER_ACCOUNT_KEY = "sentinel:paper:account"
 _PAPER_ORDERS_PREFIX = "sentinel:paper:orders:"
 _PAPER_POSITIONS_KEY = "sentinel:paper:positions"
 
-# Partial fill threshold: orders > 1% of ADV get partial-filled
-_PARTIAL_FILL_ADV_PCT = 0.01
+# Partial fill threshold: orders > 2% of ADV get partial-filled
+_PARTIAL_FILL_ADV_PCT = 0.02
 
 
 class PaperBroker:
@@ -100,7 +103,7 @@ class PaperBroker:
 
             await self._apply_fill(request, filled_qty, fill_price, broker_order_id)
 
-            final_status = OrderStatus.FILLED if not partial else OrderStatus.PARTIALLY_FILLED
+            final_status = OrderStatus.FILLED if not partial else OrderStatus.PARTIAL
             update = OrderUpdate(
                 broker_order_id=broker_order_id,
                 client_order_id=request.client_order_id,
@@ -119,33 +122,17 @@ class PaperBroker:
                     rejection_reason="Limit price required for LIMIT order",
                     timestamp=now,
                 )
-            # Check if immediately fillable
-            immediately_fillable = (
-                (request.side == OrderSide.BUY and quote.ask_price <= request.limit_price)
-                or (request.side == OrderSide.SELL and quote.bid_price >= request.limit_price)
+            # Limit orders never fill on the same bar — always queue for next bar
+            await self._store_pending_order(
+                broker_order_id, request, request.quantity,
+                trigger_price=request.limit_price,
             )
-            if immediately_fillable:
-                fill_price = self._compute_fill_price(request, quote)
-                await self._apply_fill(request, request.quantity, fill_price, broker_order_id)
-                update = OrderUpdate(
-                    broker_order_id=broker_order_id,
-                    client_order_id=request.client_order_id,
-                    status=OrderStatus.FILLED,
-                    filled_qty=request.quantity,
-                    filled_avg_price=fill_price,
-                    timestamp=now,
-                )
-            else:
-                await self._store_pending_order(
-                    broker_order_id, request, request.quantity,
-                    trigger_price=request.limit_price,
-                )
-                update = OrderUpdate(
-                    broker_order_id=broker_order_id,
-                    client_order_id=request.client_order_id,
-                    status=OrderStatus.ACCEPTED,
-                    timestamp=now,
-                )
+            update = OrderUpdate(
+                broker_order_id=broker_order_id,
+                client_order_id=request.client_order_id,
+                status=OrderStatus.SUBMITTED,
+                timestamp=now,
+            )
 
         elif request.order_type == OrderType.STOP:
             if request.stop_price is None:
@@ -163,7 +150,7 @@ class PaperBroker:
             update = OrderUpdate(
                 broker_order_id=broker_order_id,
                 client_order_id=request.client_order_id,
-                status=OrderStatus.ACCEPTED,
+                status=OrderStatus.SUBMITTED,
                 timestamp=now,
             )
 
@@ -196,7 +183,7 @@ class PaperBroker:
         data = json.loads(raw)
         current_status = data.get("status", "")
 
-        if current_status in (OrderStatus.FILLED.value, OrderStatus.CANCELED.value):
+        if current_status in (OrderStatus.FILLED.value, OrderStatus.CANCELLED.value):
             return OrderUpdate(
                 broker_order_id=broker_order_id,
                 client_order_id=data.get("client_order_id", ""),
@@ -205,14 +192,14 @@ class PaperBroker:
                 timestamp=now,
             )
 
-        data["status"] = OrderStatus.CANCELED.value
+        data["status"] = OrderStatus.CANCELLED.value
         data["timestamp"] = now.isoformat()
         await self._redis.set(key, json.dumps(data))
 
         return OrderUpdate(
             broker_order_id=broker_order_id,
             client_order_id=data.get("client_order_id", ""),
-            status=OrderStatus.CANCELED,
+            status=OrderStatus.CANCELLED,
             timestamp=now,
         )
 
@@ -277,6 +264,59 @@ class PaperBroker:
             return False
         return market_open <= est_now.time() < market_close
 
+    async def get_open_orders(self) -> list[dict]:
+        """Return all pending/submitted orders."""
+        open_orders: list[dict] = []
+        pattern = f"{_PAPER_ORDERS_PREFIX}*"
+        async for key in self._redis.scan_iter(pattern):
+            raw = await self._redis.get(key)
+            if raw is None:
+                continue
+            data = json.loads(raw)
+            if data.get("status") in (
+                OrderStatus.SUBMITTED.value,
+                OrderStatus.PARTIAL.value,
+                OrderStatus.PENDING.value,
+            ):
+                open_orders.append(data)
+        return open_orders
+
+    async def reset_for_new_session(self) -> int:
+        """
+        Cancel all pending DAY orders at session boundary.
+        GTC orders persist. Returns count of cancelled orders.
+        """
+        from sentinel.domain.types import TimeInForce
+        cancelled_count = 0
+        now = datetime.now(tz=timezone.utc)
+        pattern = f"{_PAPER_ORDERS_PREFIX}*"
+        keys: list[bytes] = []
+        async for key in self._redis.scan_iter(pattern):
+            keys.append(key)
+
+        for key in keys:
+            raw = await self._redis.get(key)
+            if raw is None:
+                continue
+            data = json.loads(raw)
+            if data.get("status") not in (
+                OrderStatus.SUBMITTED.value,
+                OrderStatus.PARTIAL.value,
+                OrderStatus.PENDING.value,
+            ):
+                continue
+            tif = data.get("time_in_force", TimeInForce.DAY.value)
+            if tif == TimeInForce.DAY.value:
+                data["status"] = OrderStatus.CANCELLED.value
+                data["timestamp"] = now.isoformat()
+                await self._redis.set(key, json.dumps(data))
+                cancelled_count += 1
+
+        logger.info(
+            "reset_for_new_session: cancelled %d DAY orders", cancelled_count
+        )
+        return cancelled_count
+
     # ------------------------------------------------------------------
     # Periodic processing
     # ------------------------------------------------------------------
@@ -305,8 +345,9 @@ class PaperBroker:
             data = json.loads(raw)
 
             if data.get("status") not in (
-                OrderStatus.ACCEPTED.value,
-                OrderStatus.PARTIALLY_FILLED.value,
+                OrderStatus.SUBMITTED.value,
+                OrderStatus.PARTIAL.value,
+                OrderStatus.PENDING.value,
             ):
                 continue
 
@@ -335,11 +376,11 @@ class PaperBroker:
             elif order_type == OrderType.STOP.value and trigger_price is not None:
                 if side == OrderSide.BUY and bar.high >= trigger_price:
                     triggered = True
-                    # Stop triggered — fill at open of next period (simulate as bar close)
-                    fill_price = bar.close
+                    # Apply gap risk: if open already beyond stop, fill at gap open price
+                    fill_price = self._apply_gap_fill_price(side, trigger_price, bar.open, bar.close)
                 elif side == OrderSide.SELL and bar.low <= trigger_price:
                     triggered = True
-                    fill_price = bar.close
+                    fill_price = self._apply_gap_fill_price(side, trigger_price, bar.open, bar.close)
 
             if triggered and fill_price is not None:
                 # Apply slippage
@@ -414,20 +455,42 @@ class PaperBroker:
     # Internal helpers
     # ------------------------------------------------------------------
 
+    def _apply_gap_fill_price(
+        self,
+        side: OrderSide,
+        trigger_price: Decimal,
+        bar_open: Decimal,
+        bar_close: Decimal,
+    ) -> Decimal:
+        """
+        Determine stop fill price accounting for gap risk.
+        If the bar opens beyond the stop trigger (gap through stop),
+        fill at the gap open price, not the stop price.
+        For buy stops: gap up → open > trigger → fill at open.
+        For sell stops: gap down → open < trigger → fill at open.
+        Otherwise fill at bar close (stop triggered intrabar).
+        """
+        if side == OrderSide.BUY and bar_open >= trigger_price:
+            return bar_open  # Gapped up through stop — worse fill
+        elif side == OrderSide.SELL and bar_open <= trigger_price:
+            return bar_open  # Gapped down through stop — worse fill
+        return bar_close
+
     def _compute_fill_price(self, request: OrderRequest, quote: Quote) -> Decimal:
         """Apply slippage model: buy fills at ask + slippage, sell at bid - slippage."""
         slippage_mult = Decimal(str(self._slippage_bps / 10_000))
         if request.side == OrderSide.BUY:
-            raw_price = quote.ask_price * (1 + slippage_mult)
+            raw_price = quote.ask * (1 + slippage_mult)
         else:
-            raw_price = quote.bid_price * (1 - slippage_mult)
+            raw_price = quote.bid * (1 - slippage_mult)
         return raw_price.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
     def _should_partial_fill(
         self, quantity: int, avg_daily_volume: int
     ) -> tuple[bool, int]:
         """
-        Large orders (> 1% of ADV) get partial fills across multiple ticks.
+        Large orders (> 2% of ADV) get partial fills across multiple ticks.
+        First fill: random 40-80% of full order. Remainder queued for next bar.
         Returns (is_partial, filled_qty_this_tick).
         """
         if avg_daily_volume <= 0:
@@ -437,8 +500,9 @@ class PaperBroker:
         if quantity <= threshold:
             return False, quantity
 
-        # Fill ~50% of the order on first pass
-        filled_this_tick = max(1, quantity // 2)
+        # Fill random 40-80% of the order on first pass
+        fill_pct = 0.40 + random.random() * 0.40  # [0.40, 0.80)
+        filled_this_tick = max(1, int(quantity * fill_pct))
         return True, filled_this_tick
 
     async def _get_avg_daily_volume(self, symbol: str) -> int:
@@ -517,6 +581,7 @@ class PaperBroker:
         is_partial_remainder: bool = False,
     ) -> None:
         """Persist a pending order to Redis for later processing."""
+        tif = getattr(request, "time_in_force", None)
         data = {
             "broker_order_id": broker_order_id,
             "client_order_id": request.client_order_id,
@@ -528,7 +593,8 @@ class PaperBroker:
             "limit_price": str(request.limit_price) if request.limit_price else None,
             "stop_price": str(request.stop_price) if request.stop_price else None,
             "trigger_price": str(trigger_price) if trigger_price else None,
-            "status": OrderStatus.ACCEPTED.value,
+            "time_in_force": tif.value if hasattr(tif, "value") else (tif or "day"),
+            "status": OrderStatus.SUBMITTED.value,
             "filled_qty": request.quantity - remaining_qty,
             "filled_avg_price": None,
             "is_partial_remainder": is_partial_remainder,

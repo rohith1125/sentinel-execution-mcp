@@ -124,7 +124,7 @@ _TRADEABILITY: dict[RegimeLabel, float] = {
 }
 
 # Thresholds
-_ATR_PCT_HIGH_VOL = 4.0          # % of price
+_ATR_PCT_HIGH_VOL = 2.5          # % of price
 _ADX_TREND_THRESHOLD = 25.0
 _HURST_MEAN_REVERTING = 0.45
 _BB_WIDTH_MEAN_REV = 0.04        # tight bands

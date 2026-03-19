@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from sentinel.config import Settings, get_settings
-from sentinel.db.base import get_session
+from sentinel.db.base import get_session, db_session_placeholder
 from sentinel.governance.service import GovernanceError, GovernanceService
 
 logger = structlog.get_logger(__name__)
@@ -18,7 +18,7 @@ logger = structlog.get_logger(__name__)
 router = APIRouter(prefix="/governance", tags=["governance"])
 
 
-def _get_service(session: AsyncSession = Depends(lambda: None)) -> GovernanceService:
+def _get_service(session: AsyncSession = Depends(db_session_placeholder)) -> GovernanceService:
     return GovernanceService(db=session)
 
 
@@ -46,7 +46,7 @@ class SuspendRequest(BaseModel):
 @router.post("/evaluate-promotion")
 async def evaluate_promotion(
     body: dict,
-    session: AsyncSession = Depends(lambda: None),
+    session: AsyncSession = Depends(db_session_placeholder),
 ) -> dict:
     from sentinel.domain.types import StrategyState
     strategy = body.get("strategy", "")
@@ -63,7 +63,7 @@ async def evaluate_promotion(
 @router.post("/promote")
 async def promote_strategy(
     body: dict,
-    session: AsyncSession = Depends(lambda: None),
+    session: AsyncSession = Depends(db_session_placeholder),
 ) -> dict:
     from sentinel.domain.types import StrategyState
     strategy = body.get("strategy", "")
@@ -85,7 +85,7 @@ async def promote_strategy(
 @router.post("/suspend")
 async def suspend_strategy(
     body: dict,
-    session: AsyncSession = Depends(lambda: None),
+    session: AsyncSession = Depends(db_session_placeholder),
 ) -> dict:
     strategy = body.get("strategy", "")
     reason = body.get("reason", "")
@@ -100,7 +100,7 @@ async def suspend_strategy(
 
 @router.get("/strategies")
 async def list_strategy_states(
-    session: AsyncSession = Depends(lambda: None),
+    session: AsyncSession = Depends(db_session_placeholder),
 ) -> list[dict]:
     svc = GovernanceService(db=session)
     records = await svc.list_strategies()
@@ -110,7 +110,7 @@ async def list_strategy_states(
 @router.get("/drift/{strategy}")
 async def check_drift(
     strategy: str,
-    session: AsyncSession = Depends(lambda: None),
+    session: AsyncSession = Depends(db_session_placeholder),
 ) -> dict:
     svc = GovernanceService(db=session)
     return await svc.check_strategy_drift(strategy)

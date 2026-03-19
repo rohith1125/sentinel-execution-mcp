@@ -186,12 +186,8 @@ class TestDailyDrawdown:
             account_value=Decimal("100000"),
             max_daily_drawdown_pct=0.02,
         )
-        assert result.passed  # drawdown_pct < max (2.0% < 2.0% is False, so passes at boundary)
-        # Actually at boundary: 2000/100000 = 0.02, check is 0.02 < 0.02 = False → blocks
-        # Let's verify what the code actually does: passed = drawdown_pct < max
-        # 0.02 < 0.02 = False → not passed
-        # Correcting: boundary blocks
-        # The fixture above will actually NOT pass — let's fix
+        # At boundary: 2000/100000 = 0.02, check is 0.02 < 0.02 = False → blocks
+        assert not result.passed
 
     def test_boundary_one_cent_below_limit(self):
         # -1999.99 / 100000 = 1.99999% < 2% → passes

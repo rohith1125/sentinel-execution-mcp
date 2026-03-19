@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from sentinel.config import Settings, get_settings
-from sentinel.market.mock import MockMarketDataProvider
+from sentinel.market.mock import MockProvider as MockMarketDataProvider
 from sentinel.market.service import MarketDataService
 from sentinel.strategy.registry import registry as global_registry
 from sentinel.strategy.scanner import WatchlistScanner

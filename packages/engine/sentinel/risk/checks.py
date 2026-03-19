@@ -95,7 +95,7 @@ def check_daily_drawdown(
     total_pnl_today = realized_pnl_today + unrealized_pnl
     drawdown_pct = float(-total_pnl_today / account_value) if total_pnl_today < 0 else 0.0
 
-    passed = drawdown_pct < max_daily_drawdown_pct
+    passed = drawdown_pct < max_daily_drawdown_pct  # strict: at boundary, trading is blocked
     return RiskCheckResult(
         check_name=check_name,
         passed=passed,

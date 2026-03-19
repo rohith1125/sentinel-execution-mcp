@@ -50,8 +50,11 @@ class TimeInForce(str, Enum):
 class StrategyState(str, Enum):
     DRAFT = "draft"
     RESEARCH = "research"
+    BACKTEST = "backtest"
     BACKTEST_APPROVED = "backtest_approved"
+    PAPER = "paper"
     PAPER_APPROVED = "paper_approved"
+    LIVE = "live"
     LIVE_APPROVED = "live_approved"
     SUSPENDED = "suspended"
     RETIRED = "retired"

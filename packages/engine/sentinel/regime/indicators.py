@@ -76,8 +76,15 @@ def compute_rsi(close: pd.Series, period: int = 14) -> pd.Series:
     avg_gain = gain.ewm(alpha=1 / period, min_periods=period, adjust=False).mean()
     avg_loss = loss.ewm(alpha=1 / period, min_periods=period, adjust=False).mean()
 
-    rs = avg_gain / avg_loss.replace(0, np.nan)
-    rsi = 100 - (100 / (1 + rs))
+    # When avg_loss is 0, RSI = 100 (pure uptrend). fillna(50) would mask this.
+    rsi = avg_gain.copy()
+    nonzero_loss = avg_loss != 0
+    zero_loss = (avg_loss == 0) & avg_gain.notna() & avg_loss.notna()
+    rs = avg_gain[nonzero_loss] / avg_loss[nonzero_loss]
+    rsi = pd.Series(np.nan, index=close.index)
+    rsi[nonzero_loss] = 100 - (100 / (1 + rs))
+    rsi[zero_loss & (avg_gain > 0)] = 100.0
+    rsi[zero_loss & (avg_gain == 0)] = 50.0
     return rsi.fillna(50.0)
 
 
@@ -142,7 +149,7 @@ def compute_price_efficiency(close: pd.Series, period: int = 14) -> float:
 
 
 def compute_hurst_exponent(close: pd.Series, max_lag: int = 20) -> float:
-    """Estimate Hurst exponent via R/S analysis.
+    """Estimate Hurst exponent via R/S analysis on log-returns.
 
     H > 0.5  → trending / persistent
     H ≈ 0.5  → random walk
@@ -156,10 +163,21 @@ def compute_hurst_exponent(close: pd.Series, max_lag: int = 20) -> float:
     if n < max_lag * 2:
         return 0.5
 
-    lags = range(2, min(max_lag, n // 2))
+    # Scale lag range to available data — accurate R/S requires multiple scales.
+    # max_lag is a minimum-data threshold, not an upper lag bound.
+    upper_lag = max(n // 4, max_lag)
+    upper_lag = min(upper_lag, n // 2)  # ensure at least 2 segments per lag
+    if upper_lag < 4:
+        return 0.5
+
+    n_points = min(12, upper_lag - 1)
+    lags_list = sorted(set(
+        max(2, int(round(2 ** (i * math.log2(upper_lag) / n_points))))
+        for i in range(1, n_points + 1)
+    ))
     rs_values: list[tuple[float, float]] = []
 
-    for lag in lags:
+    for lag in lags_list:
         segments = n // lag
         if segments < 2:
             continue

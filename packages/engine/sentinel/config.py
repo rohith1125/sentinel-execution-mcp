@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     max_daily_drawdown_pct: float = 0.02  # 2% daily stop
     max_gross_exposure_pct: float = 0.80  # 80% max gross
     max_concurrent_positions: int = 10
+    max_trade_risk_pct: float = 0.01  # 1% max risk per trade
 
     # execution
     paper_fill_latency_ms: int = 50
@@ -43,6 +44,21 @@ class Settings(BaseSettings):
     # server
     engine_host: str = "0.0.0.0"
     engine_port: int = 8100
+
+    # Monitoring
+    alert_webhook_url: str = ""         # Slack/Discord/custom webhook
+    alert_webhook_enabled: bool = False
+    reconciliation_interval_seconds: int = 60
+    reconciliation_enabled: bool = True
+    alert_quiet_hours_start: int = 22   # 10 PM local
+    alert_quiet_hours_end: int = 8      # 8 AM local
+    drawdown_warning_pct: float = 0.015  # warn at 1.5% (before 2% hard stop)
+
+    # authentication
+    sentinel_auth_enabled: bool = True
+    sentinel_master_key: str = ""       # loaded from env, never logged
+    sentinel_api_keys_json: str = ""    # JSON string of client configs
+    rate_limit_per_minute: int = 60
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -88,7 +104,7 @@ def configure_logging(settings: Settings) -> None:
             getattr(logging, settings.log_level)
         ),
         context_class=dict,
-        logger_factory=structlog.PrintLoggerFactory(file=sys.stdout),
+        logger_factory=structlog.stdlib.LoggerFactory(),
         cache_logger_on_first_use=True,
     )
 

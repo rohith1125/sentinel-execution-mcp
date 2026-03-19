@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta
 from typing import Annotated
 
 import structlog
@@ -9,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
 from sentinel.config import Settings, get_settings
-from sentinel.market.mock import MockMarketDataProvider
+from sentinel.market.mock import MockProvider as MockMarketDataProvider
 from sentinel.market.service import MarketDataService
 from sentinel.regime.classifier import RegimeClassifier
 
@@ -55,7 +56,9 @@ async def evaluate_regime(
 ) -> dict:
     svc = _get_market_service(settings or get_settings())
     try:
-        bars = await svc.get_bars(symbol, timeframe=timeframe, limit=200)
+        _end = datetime.utcnow()
+        _start = _end - timedelta(minutes=200 * 5)
+        bars = await svc.get_bars(symbol, timeframe=timeframe, start=_start, end=_end, limit=200)
         snap = _classifier.classify(bars, symbol)
         return _snapshot_to_dict(snap)
     except Exception as exc:
@@ -71,7 +74,9 @@ async def evaluate_regime_bulk(
     results = {}
     for symbol in body.symbols:
         try:
-            bars = await svc.get_bars(symbol, timeframe=body.timeframe, limit=200)
+            _end = datetime.utcnow()
+            _start = _end - timedelta(minutes=200 * 5)
+            bars = await svc.get_bars(symbol, timeframe=body.timeframe, start=_start, end=_end, limit=200)
             snap = _classifier.classify(bars, symbol)
             results[symbol] = _snapshot_to_dict(snap)
         except Exception as exc:

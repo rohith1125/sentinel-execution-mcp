@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sentinel.audit.journal import AuditJournal
 from sentinel.audit.reports import ReportGenerator
 from sentinel.config import Settings, get_settings
+from sentinel.db.base import db_session_placeholder
 
 logger = structlog.get_logger(__name__)
 
@@ -36,7 +37,7 @@ async def get_recent_events(
     limit: int = Query(50),
     symbol: str | None = Query(None),
     strategy: str | None = Query(None),
-    session: AsyncSession = Depends(lambda: None),
+    session: AsyncSession = Depends(db_session_placeholder),
 ) -> list[dict]:
     journal = AuditJournal(db=session)
     events = await journal.get_recent_events(limit=limit, symbol=symbol, strategy=strategy)
@@ -46,7 +47,7 @@ async def get_recent_events(
 @router.get("/explain/{audit_event_id}")
 async def explain_trade(
     audit_event_id: str,
-    session: AsyncSession = Depends(lambda: None),
+    session: AsyncSession = Depends(db_session_placeholder),
 ) -> dict:
     journal = AuditJournal(db=session)
     return await journal.explain_trade(audit_event_id)
@@ -55,7 +56,7 @@ async def explain_trade(
 @router.get("/summary/daily")
 async def daily_summary(
     date: str | None = Query(None),
-    session: AsyncSession = Depends(lambda: None),
+    session: AsyncSession = Depends(db_session_placeholder),
 ) -> dict:
     rg = ReportGenerator(db=session)
     report_date = None
@@ -71,7 +72,7 @@ async def daily_summary(
 @router.get("/summary/weekly")
 async def weekly_summary(
     week_ending: str | None = Query(None),
-    session: AsyncSession = Depends(lambda: None),
+    session: AsyncSession = Depends(db_session_placeholder),
 ) -> dict:
     rg = ReportGenerator(db=session)
     we_date = None
@@ -88,7 +89,7 @@ async def weekly_summary(
 async def strategy_scorecard(
     strategy: str,
     days: int = Query(30),
-    session: AsyncSession = Depends(lambda: None),
+    session: AsyncSession = Depends(db_session_placeholder),
 ) -> dict:
     rg = ReportGenerator(db=session)
     return await rg.strategy_scorecard(strategy_name=strategy, days=days)
@@ -99,7 +100,7 @@ async def trade_blotter(
     start: str = Query(...),
     end: str = Query(...),
     strategy: str | None = Query(None),
-    session: AsyncSession = Depends(lambda: None),
+    session: AsyncSession = Depends(db_session_placeholder),
 ) -> list[dict]:
     from datetime import datetime, timezone
     try:

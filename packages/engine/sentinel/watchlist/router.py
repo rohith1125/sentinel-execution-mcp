@@ -10,7 +10,7 @@ from pydantic import BaseModel, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from sentinel.config import Settings, get_settings
-from sentinel.db.base import get_session
+from sentinel.db.base import get_session, db_session_placeholder
 from sentinel.domain.types import AssetClass
 from sentinel.watchlist.service import WatchlistService
 
@@ -72,7 +72,7 @@ class WatchlistEntryOut(BaseModel):
 
 
 def _get_service(
-    session: Annotated[AsyncSession, Depends(lambda: None)],
+    session: Annotated[AsyncSession, Depends(db_session_placeholder)],
     settings: Annotated[Settings, Depends(get_settings)],
 ) -> WatchlistService:
     return WatchlistService(session=session)
@@ -87,7 +87,7 @@ def _get_service(
 async def add_symbols(
     body: AddSymbolsRequest,
     settings: Annotated[Settings, Depends(get_settings)],
-    session: AsyncSession = Depends(lambda: None),
+    session: AsyncSession = Depends(db_session_placeholder),
 ) -> list[WatchlistEntryOut]:
     svc = WatchlistService(session=session)
     entries = await svc.add_symbols(
@@ -102,7 +102,7 @@ async def add_symbols(
 @router.delete("/symbols", status_code=status.HTTP_200_OK)
 async def remove_symbols(
     body: RemoveSymbolsRequest,
-    session: AsyncSession = Depends(lambda: None),
+    session: AsyncSession = Depends(db_session_placeholder),
 ) -> dict[str, int]:
     svc = WatchlistService(session=session)
     count = await svc.remove_symbols(symbols=body.symbols)
@@ -113,7 +113,7 @@ async def remove_symbols(
 async def list_symbols(
     group: str | None = Query(None),
     active_only: bool = Query(True),
-    session: AsyncSession = Depends(lambda: None),
+    session: AsyncSession = Depends(db_session_placeholder),
 ) -> list[WatchlistEntryOut]:
     svc = WatchlistService(session=session)
     entries = await svc.list_symbols(group=group, active_only=active_only)
@@ -122,7 +122,7 @@ async def list_symbols(
 
 @router.get("/groups", response_model=list[str])
 async def get_groups(
-    session: AsyncSession = Depends(lambda: None),
+    session: AsyncSession = Depends(db_session_placeholder),
 ) -> list[str]:
     svc = WatchlistService(session=session)
     return await svc.get_groups()
@@ -131,7 +131,7 @@ async def get_groups(
 @router.post("/symbols/tag", status_code=status.HTTP_200_OK)
 async def tag_symbols(
     body: TagSymbolsRequest,
-    session: AsyncSession = Depends(lambda: None),
+    session: AsyncSession = Depends(db_session_placeholder),
 ) -> dict[str, int]:
     svc = WatchlistService(session=session)
     count = await svc.tag_symbols(symbols=body.symbols, group=body.group)
@@ -141,7 +141,7 @@ async def tag_symbols(
 @router.post("/symbols/validate")
 async def validate_symbols(
     body: ValidateSymbolsRequest,
-    session: AsyncSession = Depends(lambda: None),
+    session: AsyncSession = Depends(db_session_placeholder),
 ) -> dict[str, bool]:
     svc = WatchlistService(session=session)
     return await svc.validate_symbols(symbols=body.symbols)
@@ -150,7 +150,7 @@ async def validate_symbols(
 @router.get("/export")
 async def export_watchlist(
     group: str | None = Query(None),
-    session: AsyncSession = Depends(lambda: None),
+    session: AsyncSession = Depends(db_session_placeholder),
 ) -> dict[str, object]:
     svc = WatchlistService(session=session)
     return await svc.export_watchlist(group=group)
@@ -159,7 +159,7 @@ async def export_watchlist(
 @router.post("/import", status_code=status.HTTP_200_OK)
 async def import_watchlist(
     body: ImportRequest,
-    session: AsyncSession = Depends(lambda: None),
+    session: AsyncSession = Depends(db_session_placeholder),
 ) -> dict[str, int]:
     svc = WatchlistService(session=session)
     count = await svc.import_watchlist(data=body.data)

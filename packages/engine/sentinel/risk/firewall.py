@@ -91,8 +91,8 @@ class RiskFirewall:
 
         # Spread in bps
         quote = snapshot.quote
-        mid = (quote.ask_price + quote.bid_price) / 2
-        spread_bps = float((quote.ask_price - quote.bid_price) / mid * 10_000) if mid > 0 else 9999.0
+        mid = (quote.ask + quote.bid) / 2
+        spread_bps = float((quote.ask - quote.bid) / mid * 10_000) if mid > 0 else 9999.0
 
         # Symbol notional map for concentration check
         symbol_notional_map: dict[str, Decimal] = {

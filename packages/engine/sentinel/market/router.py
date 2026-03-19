@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import time
+from datetime import datetime, timedelta
 from typing import Annotated
 
 import structlog
@@ -11,7 +12,7 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from sentinel.config import Settings, get_settings
-from sentinel.market.mock import MockMarketDataProvider
+from sentinel.market.mock import MockProvider as MockMarketDataProvider
 from sentinel.market.service import MarketDataService
 
 logger = structlog.get_logger(__name__)
@@ -51,9 +52,9 @@ async def get_snapshot(
         snap = await svc.get_snapshot(symbol)
         return {
             "symbol": symbol,
-            "price": float(snap.quote.ask_price),
-            "bid": float(snap.quote.bid_price),
-            "ask": float(snap.quote.ask_price),
+            "price": float(snap.quote.ask),
+            "bid": float(snap.quote.bid),
+            "ask": float(snap.quote.ask),
             "volume": snap.quote.ask_size + snap.quote.bid_size,
             "timestamp": snap.quote.timestamp.isoformat() if hasattr(snap.quote, "timestamp") else None,
         }
@@ -73,8 +74,8 @@ async def get_snapshots(
             snap = await svc.get_snapshot(symbol)
             result[symbol] = {
                 "symbol": symbol,
-                "bid": float(snap.quote.bid_price),
-                "ask": float(snap.quote.ask_price),
+                "bid": float(snap.quote.bid),
+                "ask": float(snap.quote.ask),
             }
         except Exception:
             result[symbol] = {"symbol": symbol, "error": "unavailable"}
@@ -84,13 +85,15 @@ async def get_snapshots(
 @router.get("/bars/{symbol}")
 async def get_bars(
     symbol: str,
+    settings: Annotated[Settings, Depends(get_settings)],
     timeframe: str = Query("5Min"),
     limit: int = Query(100),
-    settings: Annotated[Settings, Depends(get_settings)],
 ) -> list[dict]:
     svc = _get_market_service(settings)
     try:
-        bars = await svc.get_bars(symbol, timeframe=timeframe, limit=limit)
+        end = datetime.utcnow()
+        start = end - timedelta(minutes=limit * 5)
+        bars = await svc.get_bars(symbol, timeframe=timeframe, start=start, end=end, limit=limit)
         return [
             {
                 "timestamp": b.timestamp.isoformat(),

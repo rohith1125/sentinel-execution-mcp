@@ -8,9 +8,13 @@ from datetime import datetime
 from typing import Any
 
 import structlog
-from fastapi import FastAPI, Request, status
+from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 
+from sentinel.auth.middleware import get_current_client, require_scope
+from sentinel.auth.models import APIClient
+from sentinel.auth.rate_limiter import RateLimiter
+from sentinel.auth.service import APIKeyService, get_key_service
 from sentinel.config import Settings, configure_logging, get_settings
 from sentinel.db.base import create_all_tables, dispose_engine, get_engine, get_session_factory
 from sentinel.watchlist.router import router as watchlist_router
@@ -22,6 +26,7 @@ from sentinel.execution.router import router as execution_router
 from sentinel.execution.portfolio_router import router as portfolio_router
 from sentinel.governance.router import router as governance_router
 from sentinel.audit.router import router as audit_router
+from sentinel.monitoring.router import router as monitoring_router
 
 logger = structlog.get_logger(__name__)
 
@@ -78,8 +83,34 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
 
     # ---------------------------------------------------------------------------
+    # Rate-limiter instance (shared across requests)
+    # ---------------------------------------------------------------------------
+    _rate_limiter = RateLimiter()
+
+    # ---------------------------------------------------------------------------
     # Middleware
     # ---------------------------------------------------------------------------
+
+    @app.middleware("http")
+    async def rate_limit_middleware(request: Request, call_next: Any) -> Any:
+        # Skip rate limiting for unauthenticated ops endpoints
+        if request.url.path in ("/health", "/ready", "/docs", "/redoc", "/openapi.json"):
+            return await call_next(request)
+        # Only rate-limit if a client_id is attached (set by auth dependency or bypass)
+        client_id = request.headers.get("X-API-Key", "anonymous")
+        redis = getattr(request.app.state, "redis", None)
+        allowed, remaining = await _rate_limiter.check_and_increment(
+            client_id, settings.rate_limit_per_minute, redis
+        )
+        if not allowed:
+            return JSONResponse(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                content={"error": "rate_limit_exceeded"},
+                headers={"X-RateLimit-Remaining": "0"},
+            )
+        response = await call_next(request)
+        response.headers["X-RateLimit-Remaining"] = str(remaining)
+        return response
 
     @app.middleware("http")
     async def structured_logging_middleware(request: Request, call_next: Any) -> Any:
@@ -172,6 +203,31 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         )
 
     # ---------------------------------------------------------------------------
+    # Auth endpoints
+    # ---------------------------------------------------------------------------
+
+    @app.post("/auth/keys/generate", tags=["auth"])
+    async def generate_api_key(
+        name: str,
+        scopes: str = "read",
+        rate_limit: int = 60,
+        _client: APIClient = Depends(require_scope("admin")),
+        key_service: APIKeyService = Depends(get_key_service),
+    ) -> dict[str, object]:
+        """Generate a new API key. Admin scope required. Raw key shown only once."""
+        raw_key, hashed_key = key_service.generate_key()
+        scope_list = [s.strip() for s in scopes.split(",") if s.strip()]
+        logger.info("auth.key_generated", name=name, scopes=scope_list)
+        return {
+            "raw_key": raw_key,
+            "hashed_key": hashed_key,
+            "name": name,
+            "scopes": scope_list,
+            "rate_limit_per_minute": rate_limit,
+            "warning": "Store the raw_key securely. It will not be shown again.",
+        }
+
+    # ---------------------------------------------------------------------------
     # Routers — inject DB session dependency properly
     # ---------------------------------------------------------------------------
 
@@ -199,12 +255,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(portfolio_router)
     app.include_router(governance_router)
     app.include_router(audit_router)
+    app.include_router(monitoring_router, prefix="/monitoring", tags=["monitoring"])
 
-    # Override DB session dependency for all routers that use `lambda: None`
-    # The routers use `Depends(lambda: None)` as a placeholder that gets overridden here
-    app.dependency_overrides[lambda: None] = db_session  # type: ignore[dict-item]
+    # Override DB session dependency for all routers that use `db_session_placeholder`
+    from sentinel.db.base import db_session_placeholder
+    app.dependency_overrides[db_session_placeholder] = db_session
 
-    logger.info("engine.routes_mounted", routers=9)
+    logger.info("engine.routes_mounted", routers=10)
 
     return app
 
@@ -224,3 +281,7 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
+# Module-level app instance for uvicorn (e.g. `uvicorn sentinel.api:app`)
+app = create_app()

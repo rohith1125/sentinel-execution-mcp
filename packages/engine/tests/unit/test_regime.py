@@ -203,10 +203,10 @@ class TestRiskOff:
 
 class TestLowLiquidity:
     def test_low_volume_triggers_low_liquidity(self, classifier: RegimeClassifier):
-        # Volume at 20% of rolling average
+        # Volume at 20% of rolling average — last few bars very low vs high-volume history
         prices = [180.0 + i * 0.02 for i in range(50)]
-        # First 30 bars: normal volume; last 20: very low
-        volumes = [500_000] * 30 + [50_000] * 20
+        # 45 bars of high volume, then 5 bars very low so rolling avg (20 bars) stays high
+        volumes = [500_000] * 45 + [10_000] * 5
         bars = _make_bars("AAPL", 50, prices, volumes=volumes,
                           start_time=datetime(2024, 1, 15, 11, 0, 0))
         result = classifier.classify(bars, "AAPL")

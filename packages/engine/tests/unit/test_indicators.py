@@ -215,8 +215,10 @@ class TestComputeVWAP:
     def test_vwap_between_low_and_high(self):
         high, low, close, volume = _ohlcv(30)
         vwap = compute_vwap(high, low, close, volume)
-        assert (vwap >= low).all()
-        assert (vwap <= high).all()
+        # Cumulative VWAP is a session average, not bounded per-bar.
+        # Check that the final VWAP is within the full session's H/L range.
+        assert float(vwap.iloc[-1]) >= float(low.min())
+        assert float(vwap.iloc[-1]) <= float(high.max())
 
     def test_equal_volume_vwap_is_average_typical_price(self):
         n = 10
