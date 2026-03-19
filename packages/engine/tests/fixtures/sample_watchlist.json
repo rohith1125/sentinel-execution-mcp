@@ -1,0 +1,18 @@
+{
+  "version": "1.0",
+  "exported_at": "2024-01-15T12:00:00Z",
+  "group_filter": null,
+  "count": 10,
+  "symbols": [
+    {"symbol": "AAPL", "asset_class": "equity", "group_tags": ["tech", "mega_cap"], "notes": "iPhone cycle momentum"},
+    {"symbol": "MSFT", "asset_class": "equity", "group_tags": ["tech", "mega_cap"], "notes": "Azure cloud growth"},
+    {"symbol": "NVDA", "asset_class": "equity", "group_tags": ["tech", "ai_play"], "notes": "GPU demand cycle"},
+    {"symbol": "META", "asset_class": "equity", "group_tags": ["tech"], "notes": null},
+    {"symbol": "GOOGL", "asset_class": "equity", "group_tags": ["tech", "mega_cap"], "notes": null},
+    {"symbol": "JPM", "asset_class": "equity", "group_tags": ["finance"], "notes": "Rate sensitive"},
+    {"symbol": "GS", "asset_class": "equity", "group_tags": ["finance"], "notes": null},
+    {"symbol": "SPY", "asset_class": "etf", "group_tags": ["index", "macro"], "notes": "Market context"},
+    {"symbol": "QQQ", "asset_class": "etf", "group_tags": ["index", "macro"], "notes": "Tech-weighted index"},
+    {"symbol": "AMD", "asset_class": "equity", "group_tags": ["tech", "ai_play"], "notes": null}
+  ]
+}
