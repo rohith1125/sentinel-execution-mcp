@@ -71,9 +71,7 @@ class APIKeyService:
                         scopes=entry.get("scopes", ["read"]),
                         created_at=datetime.fromisoformat(entry.get("created_at", datetime.utcnow().isoformat())),
                         last_used_at=(
-                            datetime.fromisoformat(entry["last_used_at"])
-                            if entry.get("last_used_at")
-                            else None
+                            datetime.fromisoformat(entry["last_used_at"]) if entry.get("last_used_at") else None
                         ),
                         is_active=entry.get("is_active", True),
                         rate_limit_per_minute=entry.get("rate_limit_per_minute", 60),

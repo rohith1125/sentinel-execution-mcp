@@ -9,6 +9,7 @@ Flow:
 5. Fire audit event
 6. Return result
 """
+
 from __future__ import annotations
 
 import logging
@@ -103,6 +104,7 @@ class ExecutionService:
                 "submitted_at": now.isoformat(),
             }
             from sentinel.domain.types import DecisionOutcome
+
             outcome = (
                 DecisionOutcome.EXECUTED
                 if update.status in (OrderStatus.FILLED, OrderStatus.PARTIALLY_FILLED, OrderStatus.ACCEPTED)
@@ -214,9 +216,7 @@ class ExecutionService:
         This is a last resort. Every position gets a market sell order.
         Failures are logged but do not stop subsequent flattening attempts.
         """
-        logger.critical(
-            "FLATTEN ALL triggered by %s. Reason: %s", operator, reason
-        )
+        logger.critical("FLATTEN ALL triggered by %s. Reason: %s", operator, reason)
         updates: list[OrderUpdate] = []
         positions = await self._broker.get_positions()
 
@@ -233,6 +233,7 @@ class ExecutionService:
             sell_side = OrderSide.SELL if side_str in ("long", "buy") else OrderSide.BUY
 
             from sentinel.domain.types import OrderType, TimeInForce
+
             request = OrderRequest(
                 client_order_id=f"FLATTEN-{uuid.uuid4().hex[:8]}",
                 symbol=symbol,
@@ -347,13 +348,11 @@ class ExecutionService:
     async def _get_recent_trades(self, limit: int = 20) -> list[dict]:
         """Fetch recent closed trades from the journal."""
         from sqlalchemy import desc, select
+
         try:
             from sentinel.db.models import TradeJournal
-            stmt = (
-                select(TradeJournal)
-                .order_by(desc(TradeJournal.closed_at))
-                .limit(limit)
-            )
+
+            stmt = select(TradeJournal).order_by(desc(TradeJournal.closed_at)).limit(limit)
             result = await self._db.execute(stmt)
             rows = result.scalars().all()
             return [

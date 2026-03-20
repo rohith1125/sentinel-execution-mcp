@@ -1,4 +1,5 @@
 """Unit tests for sentinel.monitoring: reconciliation and alerts."""
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -14,6 +15,7 @@ from sentinel.monitoring.reconciliation import (
 # ---------------------------------------------------------------------------
 # Helpers / fixtures
 # ---------------------------------------------------------------------------
+
 
 def _make_settings(**kwargs):
     s = MagicMock()
@@ -80,6 +82,7 @@ class FakeBrokerAdapter:
 # ---------------------------------------------------------------------------
 # Reconciliation tests
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_reconciliation_clean_when_positions_match():
@@ -156,9 +159,7 @@ async def test_reconciler_never_raises_on_exception():
     broken_db = AsyncMock()
     broken_db.execute = AsyncMock(side_effect=RuntimeError("db down"))
 
-    reconciler = PositionReconciler(
-        broker_adapter=broken_broker, db_session=broken_db, alert_service=None
-    )
+    reconciler = PositionReconciler(broker_adapter=broken_broker, db_session=broken_db, alert_service=None)
     result = await reconciler.reconcile()  # must not raise
 
     assert isinstance(result, ReconciliationResult)
@@ -168,6 +169,7 @@ async def test_reconciler_never_raises_on_exception():
 # ---------------------------------------------------------------------------
 # Alert tests
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_alert_deduplication_prevents_spam():

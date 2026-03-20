@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     alpaca_base_url: str = "https://paper-api.alpaca.markets"
 
     # risk limits (defaults are conservative)
-    max_position_pct: float = 0.05       # 5% per position
+    max_position_pct: float = 0.05  # 5% per position
     max_daily_drawdown_pct: float = 0.02  # 2% daily stop
     max_gross_exposure_pct: float = 0.80  # 80% max gross
     max_concurrent_positions: int = 10
@@ -46,18 +46,18 @@ class Settings(BaseSettings):
     engine_port: int = 8100
 
     # Monitoring
-    alert_webhook_url: str = ""         # Slack/Discord/custom webhook
+    alert_webhook_url: str = ""  # Slack/Discord/custom webhook
     alert_webhook_enabled: bool = False
     reconciliation_interval_seconds: int = 60
     reconciliation_enabled: bool = True
-    alert_quiet_hours_start: int = 22   # 10 PM local
-    alert_quiet_hours_end: int = 8      # 8 AM local
+    alert_quiet_hours_start: int = 22  # 10 PM local
+    alert_quiet_hours_end: int = 8  # 8 AM local
     drawdown_warning_pct: float = 0.015  # warn at 1.5% (before 2% hard stop)
 
     # authentication
     sentinel_auth_enabled: bool = True
-    sentinel_master_key: str = ""       # loaded from env, never logged
-    sentinel_api_keys_json: str = ""    # JSON string of client configs
+    sentinel_master_key: str = ""  # loaded from env, never logged
+    sentinel_api_keys_json: str = ""  # JSON string of client configs
     rate_limit_per_minute: int = 60
 
     model_config = SettingsConfigDict(
@@ -100,9 +100,7 @@ def configure_logging(settings: Settings) -> None:
 
     structlog.configure(
         processors=processors,
-        wrapper_class=structlog.make_filtering_bound_logger(
-            getattr(logging, settings.log_level)
-        ),
+        wrapper_class=structlog.make_filtering_bound_logger(getattr(logging, settings.log_level)),
         context_class=dict,
         logger_factory=structlog.stdlib.LoggerFactory(),
         cache_logger_on_first_use=True,

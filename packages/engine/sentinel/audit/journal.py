@@ -7,6 +7,7 @@ This is the system's conscience.
 
 AuditJournal must never raise — exceptions are caught and logged.
 """
+
 from __future__ import annotations
 
 import logging
@@ -111,9 +112,7 @@ class AuditJournal:
             )
             return None
 
-    async def record_risk_halt(
-        self, reason: str, operator: str, affected_scope: str
-    ) -> AuditEvent | None:
+    async def record_risk_halt(self, reason: str, operator: str, affected_scope: str) -> AuditEvent | None:
         """Record a risk halt event."""
         try:
             now = datetime.now(tz=UTC)
@@ -157,16 +156,19 @@ class AuditJournal:
                 timestamp=now,
                 decision_outcome=f"{from_state}_to_{to_state}",
                 decision_explanation=f"Strategy '{strategy_name}' promoted from {from_state} to {to_state} by {operator}",
-                outcome={"strategy_name": strategy_name, "from_state": from_state, "to_state": to_state, "operator": operator},
+                outcome={
+                    "strategy_name": strategy_name,
+                    "from_state": from_state,
+                    "to_state": to_state,
+                    "operator": operator,
+                },
                 created_at=now,
             )
             self._db.add(event)
             await self._db.flush()
             return event
         except Exception:
-            logger.exception(
-                "AuditJournal.record_strategy_promotion: failed for '%s'", strategy_name
-            )
+            logger.exception("AuditJournal.record_strategy_promotion: failed for '%s'", strategy_name)
             return None
 
     # ------------------------------------------------------------------
@@ -180,6 +182,7 @@ class AuditJournal:
         """
         try:
             from sqlalchemy import select
+
             stmt = select(AuditEvent).where(AuditEvent.id == audit_event_id)
             result = await self._db.execute(stmt)
             event = result.scalar_one_or_none()
@@ -212,9 +215,7 @@ class AuditJournal:
 
             return explanation
         except Exception:
-            logger.exception(
-                "AuditJournal.explain_trade: failed to explain event %s", audit_event_id
-            )
+            logger.exception("AuditJournal.explain_trade: failed to explain event %s", audit_event_id)
             return {"error": "Failed to retrieve trade explanation", "event_id": audit_event_id}
 
     async def get_recent_events(
@@ -226,6 +227,7 @@ class AuditJournal:
         """Fetch recent audit events with optional filters."""
         try:
             from sqlalchemy import desc, select
+
             stmt = select(AuditEvent).order_by(desc(AuditEvent.created_at)).limit(limit)
             if symbol:
                 stmt = stmt.where(AuditEvent.symbol == symbol)

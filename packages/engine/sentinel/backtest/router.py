@@ -88,16 +88,18 @@ def _get_mock_bars(symbol: str, start_date: date, end_date: date):  # type: igno
         bar_date = ts.date()
         if bar_date < start_date or bar_date > end_date:
             continue
-        bars.append(Bar(
-            symbol=item["symbol"],
-            timestamp=ts,
-            open=Decimal(str(item["open"])),
-            high=Decimal(str(item["high"])),
-            low=Decimal(str(item["low"])),
-            close=Decimal(str(item["close"])),
-            volume=int(item["volume"]),
-            vwap=Decimal(str(item["vwap"])) if item.get("vwap") is not None else None,
-        ))
+        bars.append(
+            Bar(
+                symbol=item["symbol"],
+                timestamp=ts,
+                open=Decimal(str(item["open"])),
+                high=Decimal(str(item["high"])),
+                low=Decimal(str(item["low"])),
+                close=Decimal(str(item["close"])),
+                volume=int(item["volume"]),
+                vwap=Decimal(str(item["vwap"])) if item.get("vwap") is not None else None,
+            )
+        )
     return sorted(bars, key=lambda b: b.timestamp)
 
 
@@ -264,15 +266,17 @@ async def list_recent_results(request: Request) -> list[dict]:
             raw = await redis.get(f"sentinel:backtest:{rid}")
             if raw:
                 data = json.loads(raw)
-                summaries.append({
-                    "result_id": rid,
-                    "strategy_name": data.get("strategy_name"),
-                    "symbol": data.get("symbol"),
-                    "total_trades": data.get("total_trades"),
-                    "win_rate": data.get("win_rate"),
-                    "net_profit": data.get("net_profit"),
-                    "ran_at": data.get("ran_at"),
-                })
+                summaries.append(
+                    {
+                        "result_id": rid,
+                        "strategy_name": data.get("strategy_name"),
+                        "symbol": data.get("symbol"),
+                        "total_trades": data.get("total_trades"),
+                        "win_rate": data.get("win_rate"),
+                        "net_profit": data.get("net_profit"),
+                        "ran_at": data.get("ran_at"),
+                    }
+                )
         return summaries
     except Exception as exc:
         logger.warning("backtest.results_fetch_failed", error=str(exc))
@@ -282,4 +286,5 @@ async def list_recent_results(request: Request) -> list[dict]:
 @router.get("/strategies")
 async def list_strategies() -> list[str]:
     from sentinel.strategy.registry import registry
+
     return registry.list_strategies()

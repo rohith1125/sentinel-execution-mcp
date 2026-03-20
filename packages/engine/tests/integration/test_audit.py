@@ -1,4 +1,5 @@
 """Integration tests for audit journal."""
+
 from __future__ import annotations
 
 import pytest
@@ -28,6 +29,7 @@ def _trade_decision_kwargs(symbol: str = "AAPL", strategy_id: str = "strat-001")
 # Test 1: record_trade_decision creates AuditEvent record
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_record_trade_decision_creates_record(db_session):
     journal = AuditJournal(db_session)
@@ -43,6 +45,7 @@ async def test_record_trade_decision_creates_record(db_session):
 # ---------------------------------------------------------------------------
 # Test 2: AuditEvent records have unique IDs (append-only pattern)
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_audit_events_have_unique_ids(db_session):
@@ -60,6 +63,7 @@ async def test_audit_events_have_unique_ids(db_session):
 # Test 3: explain_trade returns dict with expected keys
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_explain_trade_returns_expected_keys(db_session):
     journal = AuditJournal(db_session)
@@ -68,8 +72,18 @@ async def test_explain_trade_returns_expected_keys(db_session):
 
     explanation = await journal.explain_trade(event.event_id)
 
-    required_keys = {"event_id", "event_type", "symbol", "strategy", "outcome",
-                     "signal", "regime", "risk_assessment", "sizing", "execution"}
+    required_keys = {
+        "event_id",
+        "event_type",
+        "symbol",
+        "strategy",
+        "outcome",
+        "signal",
+        "regime",
+        "risk_assessment",
+        "sizing",
+        "execution",
+    }
     for key in required_keys:
         assert key in explanation, f"Missing key in explain_trade result: {key}"
 
@@ -81,6 +95,7 @@ async def test_explain_trade_returns_expected_keys(db_session):
 # ---------------------------------------------------------------------------
 # Test 4: get_recent_events returns records in reverse chronological order
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_get_recent_events_reverse_chronological(db_session):

@@ -162,9 +162,7 @@ class WatchlistService:
             except ValueError:
                 asset_class = AssetClass.EQUITY
 
-            existing = await self._session.execute(
-                select(WatchlistEntry).where(WatchlistEntry.symbol == ticker)
-            )
+            existing = await self._session.execute(select(WatchlistEntry).where(WatchlistEntry.symbol == ticker))
             entry = existing.scalar_one_or_none()
             if entry is None:
                 entry = WatchlistEntry(

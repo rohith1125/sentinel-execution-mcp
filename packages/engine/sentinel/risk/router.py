@@ -17,6 +17,7 @@ router = APIRouter(prefix="/risk", tags=["risk"])
 
 def _get_firewall(request: Request, settings: Settings) -> Any:
     from sentinel.risk.firewall import RiskFirewall
+
     redis = getattr(request.app.state, "redis", None)
     if redis is None:
         raise HTTPException(status_code=503, detail="Redis unavailable — risk firewall requires Redis")

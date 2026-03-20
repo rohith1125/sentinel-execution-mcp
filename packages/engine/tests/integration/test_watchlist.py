@@ -4,6 +4,7 @@ Integration tests for WatchlistService.
 All tests use a real database session (test DB) created fresh per test
 via the db_session fixture in conftest.py.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -270,9 +271,7 @@ class TestWatchlistExportImport:
         await svc.add_symbols(["AAPL"])
         await db_session.commit()
 
-        payload = {
-            "symbols": [{"symbol": "AAPL", "asset_class": "equity", "group_tags": [], "notes": None}]
-        }
+        payload = {"symbols": [{"symbol": "AAPL", "asset_class": "equity", "group_tags": [], "notes": None}]}
         count = await svc.import_watchlist(payload)
         await db_session.commit()
         assert count == 0  # already exists, not counted as new import

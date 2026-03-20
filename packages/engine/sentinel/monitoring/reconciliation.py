@@ -4,6 +4,7 @@ Position reconciliation: detect drift between our DB state and the broker.
 Runs periodically (configurable, default every 60s) and flags discrepancies.
 This is critical for live trading — silent drift means unexpected exposure.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -19,7 +20,7 @@ logger = structlog.get_logger(__name__)
 class ReconciliationDiscrepancy:
     symbol: str
     discrepancy_type: str  # "position_missing_in_db", "position_missing_at_broker",
-                           # "quantity_mismatch", "side_mismatch"
+    # "quantity_mismatch", "side_mismatch"
     db_quantity: int | None
     broker_quantity: int | None
     db_side: str | None
@@ -88,9 +89,8 @@ class PositionReconciler:
                     errors.append(f"broker: {broker_error}")
                 summary = f"Reconciliation incomplete due to fetch errors: {'; '.join(errors)}"
             else:
-                summary = (
-                    f"Reconciled {len(all_symbols)} symbol(s): "
-                    + ("no discrepancies" if is_clean else f"{len(discrepancies)} discrepancy(ies) found")
+                summary = f"Reconciled {len(all_symbols)} symbol(s): " + (
+                    "no discrepancies" if is_clean else f"{len(discrepancies)} discrepancy(ies) found"
                 )
 
             result = ReconciliationResult(
@@ -106,6 +106,7 @@ class PositionReconciler:
             if critical and self._alerts is not None:
                 try:
                     from sentinel.monitoring.alerts import alert_position_reconciliation_failed
+
                     tmpl = alert_position_reconciliation_failed(critical)
                     await self._alerts.fire_critical(
                         title=tmpl["title"],
@@ -160,12 +161,8 @@ class PositionReconciler:
         """Returns {symbol: {quantity, side}} from DB open positions."""
         try:
             from sqlalchemy import text
-            result = await self._db.execute(
-                text(
-                    "SELECT symbol, quantity, side FROM positions "
-                    "WHERE status = 'open'"
-                )
-            )
+
+            result = await self._db.execute(text("SELECT symbol, quantity, side FROM positions WHERE status = 'open'"))
             rows = result.fetchall()
             return {row.symbol: {"quantity": row.quantity, "side": row.side} for row in rows}
         except Exception as exc:
@@ -176,9 +173,8 @@ class PositionReconciler:
         """Returns (positions, error_message). error_message is None on success."""
         try:
             from sqlalchemy import text
-            result = await self._db.execute(
-                text("SELECT symbol, quantity, side FROM positions WHERE status = 'open'")
-            )
+
+            result = await self._db.execute(text("SELECT symbol, quantity, side FROM positions WHERE status = 'open'"))
             rows = result.fetchall()
             return {row.symbol: {"quantity": row.quantity, "side": row.side} for row in rows}, None
         except Exception as exc:

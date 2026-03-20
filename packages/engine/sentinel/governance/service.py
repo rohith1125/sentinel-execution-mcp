@@ -7,6 +7,7 @@ This system is deliberately conservative. A strategy must earn each promotion
 by demonstrating real edge in progressively more demanding conditions.
 Live promotion always requires a human sign-off — no automated path to real money.
 """
+
 from __future__ import annotations
 
 import logging
@@ -55,9 +56,7 @@ class GovernanceService:
     # Strategy registration
     # ------------------------------------------------------------------
 
-    async def register_strategy(
-        self, name: str, description: str, config: dict
-    ) -> StrategyRecord:
+    async def register_strategy(self, name: str, description: str, config: dict) -> StrategyRecord:
         """Create a new strategy in DRAFT state."""
         import json
 
@@ -83,9 +82,7 @@ class GovernanceService:
     # Evaluation (read-only, no side effects)
     # ------------------------------------------------------------------
 
-    async def evaluate_promotion(
-        self, strategy_name: str, target_state: StrategyState
-    ) -> tuple[bool, dict]:
+    async def evaluate_promotion(self, strategy_name: str, target_state: StrategyState) -> tuple[bool, dict]:
         """
         Check if strategy meets criteria for promotion.
         Returns (eligible, {criteria_results, metrics, gaps}).
@@ -107,9 +104,7 @@ class GovernanceService:
                 "gaps": [],
             }
 
-        metrics = await self.compute_strategy_metrics(
-            strategy_name, days=criteria.evaluation_period_days
-        )
+        metrics = await self.compute_strategy_metrics(strategy_name, days=criteria.evaluation_period_days)
 
         criteria_results: dict[str, dict] = {}
         gaps: list[str] = []
@@ -136,7 +131,9 @@ class GovernanceService:
         all_pass &= _check("trade_count", metrics.get("trade_count", 0), criteria.min_trades)
         all_pass &= _check("win_rate", metrics.get("win_rate", 0.0), criteria.min_win_rate)
         all_pass &= _check("profit_factor", metrics.get("profit_factor", 0.0), criteria.min_profit_factor)
-        all_pass &= _check("max_drawdown_pct", metrics.get("max_drawdown_pct", 1.0), criteria.max_drawdown_pct, is_max=True)
+        all_pass &= _check(
+            "max_drawdown_pct", metrics.get("max_drawdown_pct", 1.0), criteria.max_drawdown_pct, is_max=True
+        )
         all_pass &= _check("sharpe_ratio", metrics.get("sharpe_ratio", 0.0), criteria.min_sharpe_ratio)
         all_pass &= _check("expectancy_r", metrics.get("expectancy_r", 0.0), criteria.min_expectancy_r)
 
@@ -224,21 +221,13 @@ class GovernanceService:
     # Lifecycle management
     # ------------------------------------------------------------------
 
-    async def suspend_strategy(
-        self, strategy_name: str, reason: str, operator: str
-    ) -> StrategyRecord:
+    async def suspend_strategy(self, strategy_name: str, reason: str, operator: str) -> StrategyRecord:
         """Immediately suspend strategy. Can be triggered by drift detection."""
-        return await self._transition_to(
-            strategy_name, StrategyState.SUSPENDED, operator, reason
-        )
+        return await self._transition_to(strategy_name, StrategyState.SUSPENDED, operator, reason)
 
-    async def retire_strategy(
-        self, strategy_name: str, reason: str, operator: str
-    ) -> StrategyRecord:
+    async def retire_strategy(self, strategy_name: str, reason: str, operator: str) -> StrategyRecord:
         """Retire a strategy permanently."""
-        return await self._transition_to(
-            strategy_name, StrategyState.RETIRED, operator, reason
-        )
+        return await self._transition_to(strategy_name, StrategyState.RETIRED, operator, reason)
 
     async def _transition_to(
         self,
@@ -283,6 +272,7 @@ class GovernanceService:
     async def get_strategy(self, name: str) -> StrategyRecord | None:
         """Fetch strategy by name."""
         from sqlalchemy import select
+
         try:
             stmt = select(StrategyRecord).where(StrategyRecord.name == name)
             result = await self._db.execute(stmt)
@@ -291,11 +281,10 @@ class GovernanceService:
             logger.exception("GovernanceService: failed to fetch strategy '%s'", name)
             return None
 
-    async def list_strategies(
-        self, state: StrategyState | None = None
-    ) -> list[StrategyRecord]:
+    async def list_strategies(self, state: StrategyState | None = None) -> list[StrategyRecord]:
         """List all strategies, optionally filtered by state."""
         from sqlalchemy import select
+
         try:
             stmt = select(StrategyRecord)
             if state is not None:
@@ -310,9 +299,7 @@ class GovernanceService:
     # Metrics computation
     # ------------------------------------------------------------------
 
-    async def compute_strategy_metrics(
-        self, strategy_name: str, days: int = 30
-    ) -> dict:
+    async def compute_strategy_metrics(self, strategy_name: str, days: int = 30) -> dict:
         """
         Compute performance metrics from TradeJournal records.
 
@@ -325,19 +312,14 @@ class GovernanceService:
 
         cutoff = datetime.now(tz=UTC) - timedelta(days=days)
         try:
-            stmt = (
-                select(TradeJournal)
-                .where(
-                    TradeJournal.strategy_name == strategy_name,
-                    TradeJournal.closed_at >= cutoff,
-                )
+            stmt = select(TradeJournal).where(
+                TradeJournal.strategy_name == strategy_name,
+                TradeJournal.closed_at >= cutoff,
             )
             result = await self._db.execute(stmt)
             trades = list(result.scalars().all())
         except Exception:
-            logger.exception(
-                "GovernanceService: failed to fetch trades for '%s'", strategy_name
-            )
+            logger.exception("GovernanceService: failed to fetch trades for '%s'", strategy_name)
             return self._empty_metrics()
 
         if not trades:
@@ -501,8 +483,7 @@ class GovernanceService:
             mismatch_rate = mismatches / len(regimes)
             if mismatch_rate >= 0.40:
                 signals.append(
-                    f"Regime mismatch rate {mismatch_rate:.0%} — strategy may be "
-                    f"trading in adverse conditions."
+                    f"Regime mismatch rate {mismatch_rate:.0%} — strategy may be trading in adverse conditions."
                 )
 
         # Determine severity

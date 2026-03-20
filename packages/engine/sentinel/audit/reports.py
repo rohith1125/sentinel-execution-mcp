@@ -1,6 +1,7 @@
 """
 ReportGenerator — daily and weekly performance summaries.
 """
+
 from __future__ import annotations
 
 import logging
@@ -243,9 +244,7 @@ class ReportGenerator:
             result = await self._db.execute(stmt)
             trades = list(result.scalars().all())
         except Exception:
-            logger.exception(
-                "ReportGenerator.strategy_scorecard: DB error for '%s'", strategy_name
-            )
+            logger.exception("ReportGenerator.strategy_scorecard: DB error for '%s'", strategy_name)
             return {"strategy": strategy_name, "error": "Failed to load trades"}
 
         if not trades:
@@ -329,6 +328,7 @@ class ReportGenerator:
 
         # Promotion eligibility
         from sentinel.governance.criteria import CRITERIA
+
         promotion_eligibility: dict[str, bool] = {}
         _metrics = {
             "trade_count": trade_count,
@@ -439,9 +439,7 @@ class ReportGenerator:
                     "opened_at": t.opened_at.isoformat() if t.opened_at else None,
                     "closed_at": t.closed_at.isoformat() if t.closed_at else None,
                     "hold_hours": (
-                        (t.closed_at - t.opened_at).total_seconds() / 3600
-                        if t.closed_at and t.opened_at
-                        else None
+                        (t.closed_at - t.opened_at).total_seconds() / 3600 if t.closed_at and t.opened_at else None
                     ),
                 }
                 for t in trades

@@ -118,17 +118,12 @@ class Money:
 
     def __add__(self, other: Money) -> Money:
         if self.currency != other.currency:
-            raise ValueError(
-                f"Cannot add Money with different currencies: {self.currency} vs {other.currency}"
-            )
+            raise ValueError(f"Cannot add Money with different currencies: {self.currency} vs {other.currency}")
         return Money(amount=self.amount + other.amount, currency=self.currency)
 
     def __sub__(self, other: Money) -> Money:
         if self.currency != other.currency:
-            raise ValueError(
-                f"Cannot subtract Money with different currencies: "
-                f"{self.currency} vs {other.currency}"
-            )
+            raise ValueError(f"Cannot subtract Money with different currencies: {self.currency} vs {other.currency}")
         return Money(amount=self.amount - other.amount, currency=self.currency)
 
     def __mul__(self, factor: float | Decimal | int) -> Money:
@@ -155,8 +150,8 @@ class Money:
 # Type aliases
 # ---------------------------------------------------------------------------
 
-SymbolStr: TypeAlias = str          # raw ticker string
-StrategyId: TypeAlias = str         # UUID string for strategies
-AccountId: TypeAlias = str          # broker account identifier
-BrokerOrderId: TypeAlias = str      # broker-assigned order ID
-ClientOrderId: TypeAlias = str      # our internal order reference
+SymbolStr: TypeAlias = str  # raw ticker string
+StrategyId: TypeAlias = str  # UUID string for strategies
+AccountId: TypeAlias = str  # broker account identifier
+BrokerOrderId: TypeAlias = str  # broker-assigned order ID
+ClientOrderId: TypeAlias = str  # our internal order reference

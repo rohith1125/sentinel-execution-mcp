@@ -64,6 +64,7 @@ class StrategyRegistry:
 # Global singleton registry
 registry = StrategyRegistry()
 
+
 # Auto-register all built-in strategy implementations
 def _load_builtin_strategies() -> None:
     from sentinel.strategy.implementations import (  # noqa: F401
@@ -74,5 +75,6 @@ def _load_builtin_strategies() -> None:
         rsi_mean_reversion,
         vwap_reclaim,
     )
+
 
 _load_builtin_strategies()

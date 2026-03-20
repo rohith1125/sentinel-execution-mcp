@@ -19,6 +19,7 @@ router = APIRouter(prefix="/audit", tags=["audit"])
 
 def _event_to_dict(e: object) -> dict:
     from sentinel.db.models import AuditEvent as AE
+
     ev: AE = e  # type: ignore[assignment]
     return {
         "event_id": ev.event_id,
@@ -61,6 +62,7 @@ async def daily_summary(
     report_date = None
     if date:
         from datetime import date as _date
+
         try:
             report_date = _date.fromisoformat(date)
         except ValueError:
@@ -77,6 +79,7 @@ async def weekly_summary(
     we_date = None
     if week_ending:
         from datetime import date as _date
+
         try:
             we_date = _date.fromisoformat(week_ending)
         except ValueError:
@@ -102,6 +105,7 @@ async def trade_blotter(
     session: AsyncSession = Depends(db_session_placeholder),
 ) -> list[dict]:
     from datetime import datetime
+
     try:
         start_dt = datetime.fromisoformat(start).replace(tzinfo=UTC)
         end_dt = datetime.fromisoformat(end).replace(tzinfo=UTC)

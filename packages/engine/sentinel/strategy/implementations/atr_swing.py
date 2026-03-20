@@ -17,10 +17,10 @@ from sentinel.strategy.registry import registry
 
 _EMA_PERIOD = 50
 _ATR_PERIOD = 14
-_ATR_LOWER_BAND_MULT = 1.5      # EMA - 1.5 ATR = lower band
+_ATR_LOWER_BAND_MULT = 1.5  # EMA - 1.5 ATR = lower band
 _ATR_STOP_MULT = 2.0
 _ATR_TARGET_MULT = 4.0
-_WEEKLY_BARS = 5                # approx 1 trading week
+_WEEKLY_BARS = 5  # approx 1 trading week
 
 
 class ATRSwingTrendStrategy(StrategyBase):
@@ -56,13 +56,19 @@ class ATRSwingTrendStrategy(StrategyBase):
         compatible, compat_score = self.is_regime_compatible(regime)
         if not compatible:
             return self._no_signal(
-                self.name, symbol, bars, compat_score,
+                self.name,
+                symbol,
+                bars,
+                compat_score,
                 f"Regime {regime.label.value} incompatible.",
             )
 
         if len(bars) < self.min_bars_required:
             return self._no_signal(
-                self.name, symbol, bars, compat_score,
+                self.name,
+                symbol,
+                bars,
+                compat_score,
                 f"Insufficient bars: need {self.min_bars_required}, have {len(bars)}.",
             )
 
@@ -93,7 +99,10 @@ class ATRSwingTrendStrategy(StrategyBase):
 
             if not ema_falling:
                 return self._no_signal(
-                    self.name, symbol, bars, compat_score,
+                    self.name,
+                    symbol,
+                    bars,
+                    compat_score,
                     f"EMA50 not falling for short setup (EMA50={e50:.2f}, 5-bars-ago={ema_5_ago:.2f}).",
                 )
 
@@ -103,7 +112,10 @@ class ATRSwingTrendStrategy(StrategyBase):
 
             if not weekly_trending_down:
                 return self._no_signal(
-                    self.name, symbol, bars, compat_score,
+                    self.name,
+                    symbol,
+                    bars,
+                    compat_score,
                     "Weekly trend not down — short setup invalid.",
                 )
 
@@ -111,7 +123,10 @@ class ATRSwingTrendStrategy(StrategyBase):
             latest_high = float(high.iloc[-1])
             if latest_high < upper_band * 0.99:
                 return self._no_signal(
-                    self.name, symbol, bars, compat_score,
+                    self.name,
+                    symbol,
+                    bars,
+                    compat_score,
                     f"Price not near upper ATR band: high={latest_high:.2f}, upper_band={upper_band:.2f}.",
                 )
 
@@ -125,14 +140,20 @@ class ATRSwingTrendStrategy(StrategyBase):
             # Long side (TRENDING_BULL or default)
             if not ema_rising:
                 return self._no_signal(
-                    self.name, symbol, bars, compat_score,
+                    self.name,
+                    symbol,
+                    bars,
+                    compat_score,
                     f"EMA50 not rising: current={e50:.2f}, 5-bars-ago={ema_5_ago:.2f}.",
                 )
 
             # Price must be above EMA50
             if latest_close < e50:
                 return self._no_signal(
-                    self.name, symbol, bars, compat_score,
+                    self.name,
+                    symbol,
+                    bars,
+                    compat_score,
                     f"Price ({latest_close:.2f}) below EMA50 ({e50:.2f}).",
                 )
 
@@ -142,7 +163,10 @@ class ATRSwingTrendStrategy(StrategyBase):
 
             if not weekly_trending_up:
                 return self._no_signal(
-                    self.name, symbol, bars, compat_score,
+                    self.name,
+                    symbol,
+                    bars,
+                    compat_score,
                     "Weekly trend not up — long setup invalid.",
                 )
 
@@ -158,14 +182,20 @@ class ATRSwingTrendStrategy(StrategyBase):
 
             if not touched_lower:
                 return self._no_signal(
-                    self.name, symbol, bars, compat_score,
+                    self.name,
+                    symbol,
+                    bars,
+                    compat_score,
                     f"No ATR band pullback: lower_band={lower_band:.2f}, recent lows={float(low.iloc[-1]):.2f}.",
                 )
 
             # Entry: daily close above prior day high
             if latest_close <= prior_high:
                 return self._no_signal(
-                    self.name, symbol, bars, compat_score,
+                    self.name,
+                    symbol,
+                    bars,
+                    compat_score,
                     f"Entry trigger not met: close={latest_close:.2f} <= prior_high={prior_high:.2f}.",
                 )
 
@@ -181,7 +211,7 @@ class ATRSwingTrendStrategy(StrategyBase):
         confidence = min(
             0.88,
             compat_score * 0.5
-            + min(atr_val / (float(entry) * 0.02), 0.3)   # higher ATR = more movement potential
+            + min(atr_val / (float(entry) * 0.02), 0.3)  # higher ATR = more movement potential
             + 0.20,
         )
 
@@ -203,7 +233,9 @@ class ATRSwingTrendStrategy(StrategyBase):
             timeframe=self.default_timeframe,
             supporting_indicators=indicators,
             invalidation_conditions=[
-                f"Price closes below EMA50 ({e50:.2f})" if side == OrderSide.BUY else f"Price closes above EMA50 ({e50:.2f})",
+                f"Price closes below EMA50 ({e50:.2f})"
+                if side == OrderSide.BUY
+                else f"Price closes above EMA50 ({e50:.2f})",
                 "EMA50 turns flat or reverses direction",
                 f"Stop hit at {float(stop):.2f}",
             ],

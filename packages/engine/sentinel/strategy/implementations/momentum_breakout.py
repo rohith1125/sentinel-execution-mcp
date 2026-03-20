@@ -20,11 +20,11 @@ from sentinel.regime.models import RegimeSnapshot
 from sentinel.strategy.base import StrategyBase, StrategyResult, StrategySignal
 from sentinel.strategy.registry import registry
 
-_BREAKOUT_LOOKBACK = 20          # N-day high window
-_VOLUME_MULTIPLIER = 1.5         # relative volume required at breakout
+_BREAKOUT_LOOKBACK = 20  # N-day high window
+_VOLUME_MULTIPLIER = 1.5  # relative volume required at breakout
 _RSI_MIN = 55.0
 _RSI_MAX = 80.0
-_ENTRY_BUFFER_PCT = 0.001        # 0.1% above breakout level
+_ENTRY_BUFFER_PCT = 0.001  # 0.1% above breakout level
 _RR_RATIO = 2.0
 _ATR_STOP_MULTIPLIER = 2.0
 
@@ -51,7 +51,7 @@ class MomentumBreakoutStrategy(StrategyBase):
         RegimeLabel.RISK_OFF,
         RegimeLabel.OPENING_NOISE,
     ]
-    min_bars_required: ClassVar[int] = 55   # need 50 bars for EMA50 + buffer
+    min_bars_required: ClassVar[int] = 55  # need 50 bars for EMA50 + buffer
     default_timeframe: ClassVar[str] = "5min"
 
     def evaluate(
@@ -63,13 +63,19 @@ class MomentumBreakoutStrategy(StrategyBase):
         compatible, compat_score = self.is_regime_compatible(regime)
         if not compatible:
             return self._no_signal(
-                self.name, symbol, bars, compat_score,
+                self.name,
+                symbol,
+                bars,
+                compat_score,
                 f"Regime {regime.label.value} is incompatible (anti-regime or low score).",
             )
 
         if len(bars) < self.min_bars_required:
             return self._no_signal(
-                self.name, symbol, bars, compat_score,
+                self.name,
+                symbol,
+                bars,
+                compat_score,
                 f"Insufficient bars: need {self.min_bars_required}, have {len(bars)}.",
             )
 
@@ -93,7 +99,7 @@ class MomentumBreakoutStrategy(StrategyBase):
         atr_val = float(atr_series.iloc[-1])
 
         # Prior N-bar high (excluding current bar)
-        prior_high = float(high.iloc[-(1 + _BREAKOUT_LOOKBACK):-1].max())
+        prior_high = float(high.iloc[-(1 + _BREAKOUT_LOOKBACK) : -1].max())
 
         indicators = {
             "rsi": rsi_val,
@@ -108,25 +114,37 @@ class MomentumBreakoutStrategy(StrategyBase):
         # --- Condition checks ---
         if latest_high <= prior_high:
             return self._no_signal(
-                self.name, symbol, bars, compat_score,
+                self.name,
+                symbol,
+                bars,
+                compat_score,
                 f"No breakout: latest_high={latest_high:.2f} <= prior_{_BREAKOUT_LOOKBACK}bar_high={prior_high:.2f}.",
             )
 
         if vol_ratio_val < _VOLUME_MULTIPLIER:
             return self._no_signal(
-                self.name, symbol, bars, compat_score,
+                self.name,
+                symbol,
+                bars,
+                compat_score,
                 f"Volume confirmation failed: vol_ratio={vol_ratio_val:.2f} < {_VOLUME_MULTIPLIER}.",
             )
 
         if not (ema_20_val > ema_50_val):
             return self._no_signal(
-                self.name, symbol, bars, compat_score,
+                self.name,
+                symbol,
+                bars,
+                compat_score,
                 f"EMA stack not bullish: EMA20={ema_20_val:.2f}, EMA50={ema_50_val:.2f}.",
             )
 
         if not (_RSI_MIN <= rsi_val <= _RSI_MAX):
             return self._no_signal(
-                self.name, symbol, bars, compat_score,
+                self.name,
+                symbol,
+                bars,
+                compat_score,
                 f"RSI={rsi_val:.1f} outside acceptable range [{_RSI_MIN}, {_RSI_MAX}].",
             )
 

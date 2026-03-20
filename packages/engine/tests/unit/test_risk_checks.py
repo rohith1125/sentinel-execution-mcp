@@ -9,6 +9,7 @@ Each check is exercised for:
 
 All functions are pure — no I/O, no database, fully synchronous.
 """
+
 from __future__ import annotations
 
 from datetime import UTC, datetime, time, timedelta
@@ -708,9 +709,7 @@ class TestConsecutiveLossesCooldown:
             {"pnl": -80, "closed_at": (now - timedelta(minutes=3)).isoformat()},
             {"pnl": -60, "closed_at": (now - timedelta(minutes=1)).isoformat()},
         ]
-        result = check_consecutive_losses_cooldown(
-            trades, max_consecutive_losses=3, cooldown_minutes=30
-        )
+        result = check_consecutive_losses_cooldown(trades, max_consecutive_losses=3, cooldown_minutes=30)
         assert not result.passed
 
     def test_cooldown_expires_after_enough_time(self):
@@ -720,9 +719,7 @@ class TestConsecutiveLossesCooldown:
             {"pnl": -80, "closed_at": (old_time - timedelta(minutes=1)).isoformat()},
             {"pnl": -60, "closed_at": old_time.isoformat()},
         ]
-        result = check_consecutive_losses_cooldown(
-            trades, max_consecutive_losses=3, cooldown_minutes=30
-        )
+        result = check_consecutive_losses_cooldown(trades, max_consecutive_losses=3, cooldown_minutes=30)
         assert result.passed
 
     def test_win_resets_consecutive_count(self):
@@ -734,9 +731,7 @@ class TestConsecutiveLossesCooldown:
             {"pnl": -60, "closed_at": (now - timedelta(minutes=5)).isoformat()},
             {"pnl": -70, "closed_at": (now - timedelta(minutes=2)).isoformat()},
         ]
-        result = check_consecutive_losses_cooldown(
-            trades, max_consecutive_losses=3, cooldown_minutes=30
-        )
+        result = check_consecutive_losses_cooldown(trades, max_consecutive_losses=3, cooldown_minutes=30)
         # Only 2 consecutive losses after the win
         assert result.passed
 

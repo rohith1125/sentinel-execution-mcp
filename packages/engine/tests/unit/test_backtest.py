@@ -2,6 +2,7 @@
 Unit tests for the backtest engine and statistics.
 Tests verify correctness of core calculations — no DB or Redis required.
 """
+
 from __future__ import annotations
 
 import math
@@ -23,6 +24,7 @@ from sentinel.market.provider import Bar
 # ---------------------------------------------------------------------------
 # Helpers / factories
 # ---------------------------------------------------------------------------
+
 
 def _make_bar(
     symbol: str = "AAPL",
@@ -122,9 +124,7 @@ class TestEquityCurve:
 
         assert result.equity_curve, "Equity curve should not be empty"
         first_equity = result.equity_curve[0][1]
-        assert first_equity == config.initial_capital, (
-            f"Expected {config.initial_capital}, got {first_equity}"
-        )
+        assert first_equity == config.initial_capital, f"Expected {config.initial_capital}, got {first_equity}"
 
     def test_no_lookahead_bias(self) -> None:
         """Signal at bar N must fill at bar N+1, not bar N.
@@ -267,6 +267,7 @@ class TestWalkForward:
         bars = [_make_bar(dt=date(2023, 1, 3)) for _ in range(50)]
         # Patch timestamps to be sequential
         from datetime import timedelta
+
         start_dt = datetime(2023, 1, 3, tzinfo=UTC)
         for i, bar in enumerate(bars):
             object.__setattr__(bar, "timestamp", start_dt + timedelta(days=i))
@@ -281,6 +282,7 @@ class TestWalkForward:
     def test_walk_forward_returns_result_structure(self) -> None:
         """WalkForwardResult has expected fields."""
         from sentinel.backtest.walk_forward import WalkForwardResult
+
         result = WalkForwardResult(
             strategy_name="test",
             symbol="AAPL",

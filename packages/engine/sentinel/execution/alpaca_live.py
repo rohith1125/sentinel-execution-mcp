@@ -11,6 +11,7 @@ This adapter is intentionally conservative:
 IMPORTANT: Requires ALPACA_API_KEY and ALPACA_API_SECRET in environment.
 Never use this adapter in 'development' app_env — the firewall enforces this.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -99,18 +100,13 @@ class AlpacaLiveBroker:
     def __init__(self, settings: Settings) -> None:
         app_env = getattr(settings, "app_env", "development")
         if app_env.lower() == "development":
-            raise OSError(
-                "AlpacaLiveBroker cannot be used in 'development' environment. "
-                "Use PaperBroker instead."
-            )
+            raise OSError("AlpacaLiveBroker cannot be used in 'development' environment. Use PaperBroker instead.")
 
         api_key = os.environ.get("ALPACA_API_KEY") or getattr(settings, "alpaca_api_key", None)
         api_secret = os.environ.get("ALPACA_API_SECRET") or getattr(settings, "alpaca_api_secret", None)
 
         if not api_key or not api_secret:
-            raise OSError(
-                "ALPACA_API_KEY and ALPACA_API_SECRET must be set in the environment."
-            )
+            raise OSError("ALPACA_API_KEY and ALPACA_API_SECRET must be set in the environment.")
 
         use_paper = getattr(settings, "alpaca_paper_trading", False)
         self._base_url = _ALPACA_BASE_URL_PAPER if use_paper else _ALPACA_BASE_URL_LIVE

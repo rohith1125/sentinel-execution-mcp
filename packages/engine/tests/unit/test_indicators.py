@@ -4,6 +4,7 @@ Unit tests for technical indicator functions.
 Tests verify mathematical correctness, edge cases, and expected
 behavior against known data series.
 """
+
 from __future__ import annotations
 
 import math

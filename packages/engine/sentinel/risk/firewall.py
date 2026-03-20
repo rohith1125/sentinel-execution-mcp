@@ -4,6 +4,7 @@ RiskFirewall — the capital preservation guardian.
 Design principle: refuse to trade is a feature, not a failure.
 This system exists first to protect capital, second to enable execution.
 """
+
 from __future__ import annotations
 
 import json
@@ -106,9 +107,7 @@ class RiskFirewall:
                 sector_exposures[pos.sector] = sector_exposures.get(pos.sector, Decimal("0")) + pos.notional_value
 
         # Current positions side map for correlation check
-        current_positions_side: dict[str, str] = {
-            sym: pos.side for sym, pos in portfolio_state.positions.items()
-        }
+        current_positions_side: dict[str, str] = {sym: pos.side for sym, pos in portfolio_state.positions.items()}
 
         # Avg daily volume from snapshot (bar data)
         avg_daily_volume: int = getattr(snapshot, "avg_daily_volume", 0) or 0
@@ -169,9 +168,7 @@ class RiskFirewall:
         results.append(checks.check_spread_threshold(spread_bps))
 
         if avg_daily_volume > 0:
-            results.append(
-                checks.check_liquidity_threshold(avg_daily_volume, proposed_shares)
-            )
+            results.append(checks.check_liquidity_threshold(avg_daily_volume, proposed_shares))
         else:
             # No volume data available — conservative: block
             results.append(
@@ -185,14 +182,13 @@ class RiskFirewall:
             )
 
         from datetime import time as _time
+
         market_open = _time(9, 30, 0)
         market_close = _time(16, 0, 0)
         results.append(checks.check_no_trade_window(now, market_open, market_close))
 
         # --- Soft checks ---
-        results.append(
-            checks.check_consecutive_losses_cooldown(portfolio_state.recent_trades)
-        )
+        results.append(checks.check_consecutive_losses_cooldown(portfolio_state.recent_trades))
 
         target_symbol_sector: str | None = None
         for pos in portfolio_state.positions.values():
@@ -255,9 +251,7 @@ class RiskFirewall:
             if raw is None:
                 return KillSwitchState()
             data = json.loads(raw)
-            halted_at = (
-                datetime.fromisoformat(data["halted_at"]) if data.get("halted_at") else None
-            )
+            halted_at = datetime.fromisoformat(data["halted_at"]) if data.get("halted_at") else None
             return KillSwitchState(
                 global_halt=data.get("global_halt", False),
                 halted_strategies=set(data.get("halted_strategies", [])),
@@ -290,9 +284,7 @@ class RiskFirewall:
         state.halted_at = datetime.now(tz=UTC)
         state.halted_by = operator
         await self._save_kill_switch_state(state)
-        logger.critical(
-            "GLOBAL TRADING HALT ENGAGED by %s. Reason: %s", operator, reason
-        )
+        logger.critical("GLOBAL TRADING HALT ENGAGED by %s. Reason: %s", operator, reason)
 
     async def disengage_global_halt(self, operator: str) -> None:
         """Requires explicit confirmation to re-enable trading."""
@@ -306,16 +298,12 @@ class RiskFirewall:
         await self._save_kill_switch_state(state)
         logger.warning("Global trading halt DISENGAGED by %s.", operator)
 
-    async def halt_strategy(
-        self, strategy_name: str, reason: str, operator: str
-    ) -> None:
+    async def halt_strategy(self, strategy_name: str, reason: str, operator: str) -> None:
         """Halt a specific strategy."""
         state = await self.get_kill_switch_state()
         state.halted_strategies.add(strategy_name)
         await self._save_kill_switch_state(state)
-        logger.warning(
-            "Strategy '%s' halted by %s. Reason: %s", strategy_name, operator, reason
-        )
+        logger.warning("Strategy '%s' halted by %s. Reason: %s", strategy_name, operator, reason)
 
     async def resume_strategy(self, strategy_name: str, operator: str) -> None:
         """Resume a halted strategy."""
@@ -329,9 +317,7 @@ class RiskFirewall:
         state = await self.get_kill_switch_state()
         state.halted_symbols.add(symbol)
         await self._save_kill_switch_state(state)
-        logger.warning(
-            "Symbol '%s' halted by %s. Reason: %s", symbol, operator, reason
-        )
+        logger.warning("Symbol '%s' halted by %s. Reason: %s", symbol, operator, reason)
 
     async def resume_symbol(self, symbol: str, operator: str) -> None:
         """Resume trading in a halted symbol."""

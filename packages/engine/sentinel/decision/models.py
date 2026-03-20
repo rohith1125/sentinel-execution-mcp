@@ -16,9 +16,9 @@ from sentinel.strategy.base import StrategySignal
 class VoteRecord:
     """A single vote cast by one filter in the committee."""
 
-    voter: str                              # e.g., "liquidity_filter", "regime_gate"
+    voter: str  # e.g., "liquidity_filter", "regime_gate"
     vote: Literal["approve", "reject", "abstain"]
-    weight: float                           # 0-1, how much this vote matters
+    weight: float  # 0-1, how much this vote matters
     reason: str
     metrics: dict[str, float] = field(default_factory=dict)
 
@@ -40,7 +40,7 @@ class DecisionRequest:
     signal: StrategySignal
     regime: RegimeSnapshot  # type: ignore[name-defined]  # noqa: F821
     snapshot: Snapshot
-    portfolio_context: dict                 # current positions, exposure, P&L, etc.
+    portfolio_context: dict  # current positions, exposure, P&L, etc.
     account_value: Decimal
 
 
@@ -49,12 +49,12 @@ class DecisionResult:
     """Full output of committee deliberation."""
 
     outcome: DecisionOutcome
-    confidence: float                       # overall committee confidence
+    confidence: float  # overall committee confidence
     votes: list[VoteRecord]
     approve_count: int
     reject_count: int
     abstain_count: int
-    weighted_score: float                   # weighted average of all votes
-    explanation: str                        # human-readable summary
-    requires_human_reason: str | None       # populated if REQUIRES_HUMAN_APPROVAL
+    weighted_score: float  # weighted average of all votes
+    explanation: str  # human-readable summary
+    requires_human_reason: str | None  # populated if REQUIRES_HUMAN_APPROVAL
     decided_at: datetime

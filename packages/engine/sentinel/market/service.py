@@ -81,9 +81,7 @@ class MarketDataService:
         end: datetime,
         limit: int = 500,
     ) -> list[Bar]:
-        params_hash = _params_hash(
-            {"tf": timeframe, "start": str(start), "end": str(end), "limit": limit}
-        )
+        params_hash = _params_hash({"tf": timeframe, "start": str(start), "end": str(end), "limit": limit})
         cache_key = self._cache_key(self._primary, "bars", symbol, params_hash)
         cached = await self._cache_get(cache_key)
         if cached is not None:

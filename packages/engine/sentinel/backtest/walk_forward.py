@@ -10,6 +10,7 @@ Method:
 This is the primary guard against overfitting. A strategy that works in IS
 but fails in OOS is curve-fitted and should NOT be promoted.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -28,8 +29,8 @@ class WalkForwardWindow:
     train_end: date
     test_start: date
     test_end: date
-    train_result: object   # BacktestResult (avoid circular at module level)
-    test_result: object    # BacktestResult
+    train_result: object  # BacktestResult (avoid circular at module level)
+    test_result: object  # BacktestResult
     is_profitable_oos: bool
 
 
@@ -38,12 +39,12 @@ class WalkForwardResult:
     strategy_name: str
     symbol: str
     windows: list[WalkForwardWindow]
-    oos_win_rate: float           # avg win rate across OOS windows
-    oos_profit_factor: float      # avg profit factor across OOS windows
-    consistency_ratio: float      # % of OOS windows that were profitable
-    is_robust: bool               # consistency_ratio >= 0.6 AND oos_profit_factor >= 1.1
-    verdict: str                  # "robust" | "marginal" | "not_robust"
-    recommendation: str           # human-readable next step
+    oos_win_rate: float  # avg win rate across OOS windows
+    oos_profit_factor: float  # avg profit factor across OOS windows
+    consistency_ratio: float  # % of OOS windows that were profitable
+    is_robust: bool  # consistency_ratio >= 0.6 AND oos_profit_factor >= 1.1
+    verdict: str  # "robust" | "marginal" | "not_robust"
+    recommendation: str  # human-readable next step
 
 
 class WalkForwardValidator:
@@ -115,9 +116,7 @@ class WalkForwardValidator:
                 base_config.update(config_overrides)
 
             train_config = BacktestConfig(**base_config)
-            test_config = BacktestConfig(
-                **{**base_config, "start_date": test_start, "end_date": test_end}
-            )
+            test_config = BacktestConfig(**{**base_config, "start_date": test_start, "end_date": test_end})
 
             train_engine = BacktestEngine(strategy, self.regime_classifier, train_config)
             test_engine = BacktestEngine(strategy, self.regime_classifier, test_config)
@@ -127,16 +126,18 @@ class WalkForwardValidator:
 
             is_profitable = test_result.stats.net_profit > Decimal("0")
 
-            windows.append(WalkForwardWindow(
-                window_number=w + 1,
-                train_start=train_start,
-                train_end=train_end,
-                test_start=test_start,
-                test_end=test_end,
-                train_result=train_result,
-                test_result=test_result,
-                is_profitable_oos=is_profitable,
-            ))
+            windows.append(
+                WalkForwardWindow(
+                    window_number=w + 1,
+                    train_start=train_start,
+                    train_end=train_end,
+                    test_start=test_start,
+                    test_end=test_end,
+                    train_result=train_result,
+                    test_result=test_result,
+                    is_profitable_oos=is_profitable,
+                )
+            )
 
         if not windows:
             return self._empty_result(strategy.name, symbol)
@@ -148,8 +149,8 @@ class WalkForwardValidator:
         oos_win_rate = sum(oos_win_rates) / len(oos_win_rates)
         # Filter out inf values for averaging
         finite_pfs = [pf for pf in oos_profit_factors if pf != float("inf")]
-        oos_profit_factor = sum(finite_pfs) / len(finite_pfs) if finite_pfs else (
-            float("inf") if oos_profit_factors else 0.0
+        oos_profit_factor = (
+            sum(finite_pfs) / len(finite_pfs) if finite_pfs else (float("inf") if oos_profit_factors else 0.0)
         )
         consistency_ratio = len(profitable_windows) / len(windows)
 

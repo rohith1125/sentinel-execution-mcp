@@ -72,6 +72,7 @@ async def evaluate_promotion(
     session: AsyncSession = Depends(db_session_placeholder),
 ) -> dict:
     from sentinel.domain.types import StrategyState
+
     strategy = body.get("strategy_name") or body.get("strategy", "")
     target_raw = body.get("target_state", "")
     try:
@@ -89,6 +90,7 @@ async def promote_strategy(
     session: AsyncSession = Depends(db_session_placeholder),
 ) -> dict:
     from sentinel.domain.types import StrategyState
+
     strategy = body.get("strategy_name") or body.get("strategy", "")
     target_raw = body.get("target_state", "")
     approved_by = body.get("approved_by", "")

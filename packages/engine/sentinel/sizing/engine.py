@@ -9,24 +9,26 @@ from sentinel.domain.types import RegimeLabel
 from sentinel.regime.models import RegimeSnapshot
 
 # Default parameters
-_DEFAULT_RISK_PCT = 0.01            # 1% account risk per trade
-_MAX_POSITION_PCT = 0.10            # 10% of account per position
-_MAX_GROSS_EXPOSURE_PCT = 0.80      # 80% total gross exposure
-_LIQUIDITY_ADV_PCT = 0.01           # max 1% of average daily volume
+_DEFAULT_RISK_PCT = 0.01  # 1% account risk per trade
+_MAX_POSITION_PCT = 0.10  # 10% of account per position
+_MAX_GROSS_EXPOSURE_PCT = 0.80  # 80% total gross exposure
+_LIQUIDITY_ADV_PCT = 0.01  # max 1% of average daily volume
 _MIN_SHARES = 1
 
 # Volatility scalar mapping
-_HIGH_VOL_REGIMES = frozenset([
-    RegimeLabel.HIGH_VOL_UNSTABLE,
-    RegimeLabel.RISK_OFF,
-    RegimeLabel.EVENT_DISTORTED,
-])
+_HIGH_VOL_REGIMES = frozenset(
+    [
+        RegimeLabel.HIGH_VOL_UNSTABLE,
+        RegimeLabel.RISK_OFF,
+        RegimeLabel.EVENT_DISTORTED,
+    ]
+)
 _HIGH_VOL_SCALAR = 0.50
 _NORMAL_VOL_SCALAR = 1.00
 
 # Confidence scalar: maps signal confidence [0.5, 1.0] → size scalar [0.7, 1.0]
 _CONFIDENCE_MIN_SCALAR = 0.70
-_CONFIDENCE_MIN_INPUT = 0.50        # below this = minimum scalar
+_CONFIDENCE_MIN_INPUT = 0.50  # below this = minimum scalar
 _CONFIDENCE_MAX_INPUT = 1.00
 
 
@@ -63,9 +65,9 @@ class PositionSizingEngine:
 
         shares: int
         notional_value: Decimal
-        risk_amount: Decimal            # $ at risk if stop is hit
-        risk_pct_of_account: float      # actual risk as % of account
-        binding_constraint: str         # which constraint was smallest
+        risk_amount: Decimal  # $ at risk if stop is hit
+        risk_pct_of_account: float  # actual risk as % of account
+        binding_constraint: str  # which constraint was smallest
         details: dict[str, float] = field(default_factory=dict)
 
     def compute_size(

@@ -123,13 +123,13 @@ _TRADEABILITY: dict[RegimeLabel, float] = {
 }
 
 # Thresholds
-_ATR_PCT_HIGH_VOL = 2.5          # % of price
+_ATR_PCT_HIGH_VOL = 2.5  # % of price
 _ADX_TREND_THRESHOLD = 25.0
 _HURST_MEAN_REVERTING = 0.45
-_BB_WIDTH_MEAN_REV = 0.04        # tight bands
+_BB_WIDTH_MEAN_REV = 0.04  # tight bands
 _VOL_RATIO_LOW_LIQ = 0.3
-_SPY_RISK_OFF_PCT = -1.5         # SPY intraday change %
-_MARKET_OPEN_MINUTES = 30        # opening noise window
+_SPY_RISK_OFF_PCT = -1.5  # SPY intraday change %
+_MARKET_OPEN_MINUTES = 30  # opening noise window
 _ET_OPEN = time(9, 30)
 
 

@@ -11,7 +11,7 @@ class APIClient:
     client_id: str
     name: str
     hashed_key: str
-    scopes: list[str]           # e.g. ["read", "trade", "admin"]
+    scopes: list[str]  # e.g. ["read", "trade", "admin"]
     created_at: datetime
     last_used_at: datetime | None = None
     is_active: bool = True

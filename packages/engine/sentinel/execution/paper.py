@@ -11,6 +11,7 @@ Simulates realistic execution:
 - Partial fill size: random 40-80% of order, remainder queued for next bar
 - In-memory order book with Redis persistence
 """
+
 from __future__ import annotations
 
 import json
@@ -125,7 +126,9 @@ class PaperBroker:
                 )
             # Limit orders never fill on the same bar — always queue for next bar
             await self._store_pending_order(
-                broker_order_id, request, request.quantity,
+                broker_order_id,
+                request,
+                request.quantity,
                 trigger_price=request.limit_price,
             )
             update = OrderUpdate(
@@ -145,7 +148,9 @@ class PaperBroker:
                     timestamp=now,
                 )
             await self._store_pending_order(
-                broker_order_id, request, request.quantity,
+                broker_order_id,
+                request,
+                request.quantity,
                 trigger_price=request.stop_price,
             )
             update = OrderUpdate(
@@ -224,9 +229,7 @@ class PaperBroker:
             client_order_id=data.get("client_order_id", ""),
             status=OrderStatus(data["status"]),
             filled_qty=data.get("filled_qty", 0),
-            filled_avg_price=(
-                Decimal(str(data["filled_avg_price"])) if data.get("filled_avg_price") else None
-            ),
+            filled_avg_price=(Decimal(str(data["filled_avg_price"])) if data.get("filled_avg_price") else None),
             timestamp=datetime.fromisoformat(data["timestamp"]),
         )
 
@@ -255,9 +258,11 @@ class PaperBroker:
     async def is_market_open(self) -> bool:
         """Check if market is currently open (simplified: check time)."""
         from datetime import time as _time
+
         now = datetime.now(tz=UTC)
         # EST offset (simplified)
         from datetime import timedelta
+
         est_now = now - timedelta(hours=5)
         market_open = _time(9, 30)
         market_close = _time(16, 0)
@@ -288,6 +293,7 @@ class PaperBroker:
         GTC orders persist. Returns count of cancelled orders.
         """
         from sentinel.domain.types import TimeInForce
+
         cancelled_count = 0
         now = datetime.now(tz=UTC)
         pattern = f"{_PAPER_ORDERS_PREFIX}*"
@@ -313,18 +319,14 @@ class PaperBroker:
                 await self._redis.set(key, json.dumps(data))
                 cancelled_count += 1
 
-        logger.info(
-            "reset_for_new_session: cancelled %d DAY orders", cancelled_count
-        )
+        logger.info("reset_for_new_session: cancelled %d DAY orders", cancelled_count)
         return cancelled_count
 
     # ------------------------------------------------------------------
     # Periodic processing
     # ------------------------------------------------------------------
 
-    async def process_pending_orders(
-        self, current_bars: dict[str, Bar]
-    ) -> list[OrderUpdate]:
+    async def process_pending_orders(self, current_bars: dict[str, Bar]) -> list[OrderUpdate]:
         """
         Called periodically with latest bars.
         Processes all pending limit/stop orders.
@@ -437,9 +439,7 @@ class PaperBroker:
 
         return cash + position_value
 
-    async def reset_paper_account(
-        self, starting_cash: Decimal = Decimal("100000")
-    ) -> None:
+    async def reset_paper_account(self, starting_cash: Decimal = Decimal("100000")) -> None:
         """Reset paper account to starting state."""
         account_data = {
             "cash": str(starting_cash),
@@ -486,9 +486,7 @@ class PaperBroker:
             raw_price = quote.bid * (1 - slippage_mult)
         return raw_price.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
-    def _should_partial_fill(
-        self, quantity: int, avg_daily_volume: int
-    ) -> tuple[bool, int]:
+    def _should_partial_fill(self, quantity: int, avg_daily_volume: int) -> tuple[bool, int]:
         """
         Large orders (> 2% of ADV) get partial fills across multiple ticks.
         First fill: random 40-80% of full order. Remainder queued for next bar.
@@ -604,9 +602,7 @@ class PaperBroker:
         key = f"{_PAPER_ORDERS_PREFIX}{broker_order_id}"
         await self._redis.set(key, json.dumps(data))
 
-    async def _persist_order_update(
-        self, broker_order_id: str, update: OrderUpdate
-    ) -> None:
+    async def _persist_order_update(self, broker_order_id: str, update: OrderUpdate) -> None:
         """Store order update in Redis."""
         key = f"{_PAPER_ORDERS_PREFIX}{broker_order_id}"
         existing_raw = await self._redis.get(key)

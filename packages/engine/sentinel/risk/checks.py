@@ -7,6 +7,7 @@ Design principles:
 - Soft checks (is_hard_block=False) generate warnings but do not block.
 - Conservative bias: when in doubt, block.
 """
+
 from __future__ import annotations
 
 from datetime import UTC, datetime, time
@@ -396,6 +397,7 @@ def check_no_trade_window(
         microsecond=0,
     )
     from datetime import timedelta
+
     blackout_start = close_dt - timedelta(minutes=5)
 
     if current_time >= blackout_start:
@@ -419,10 +421,7 @@ def check_no_trade_window(
         check_name=check_name,
         passed=True,
         is_hard_block=True,
-        message=(
-            f"Within regular trading hours. "
-            f"{minutes_to_close:.0f} minutes until close blackout window."
-        ),
+        message=(f"Within regular trading hours. {minutes_to_close:.0f} minutes until close blackout window."),
         metrics={
             "minutes_to_close": minutes_to_close,
         },
@@ -465,6 +464,7 @@ def check_consecutive_losses_cooldown(
             closed_at = trade.get("closed_at") or trade.get("timestamp")
             if isinstance(closed_at, str):
                 from datetime import datetime as _dt
+
                 try:
                     last_loss_time = _dt.fromisoformat(closed_at)
                 except ValueError:

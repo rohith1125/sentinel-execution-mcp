@@ -9,6 +9,7 @@ Supports:
 Alert levels: INFO, WARNING, CRITICAL
 Critical alerts always fire regardless of quiet hours.
 """
+
 from __future__ import annotations
 
 import json
@@ -104,6 +105,7 @@ class AlertService:
         # Webhook delivery (fire-and-forget)
         if getattr(self._settings, "alert_webhook_enabled", False):
             import asyncio
+
             asyncio.create_task(self._deliver_webhook(alert))
 
         return alert
@@ -230,15 +232,17 @@ class AlertService:
         if self._redis is None:
             return
         try:
-            payload = json.dumps({
-                "alert_id": alert.alert_id,
-                "level": alert.level.value,
-                "title": alert.title,
-                "message": alert.message,
-                "context": alert.context,
-                "source": alert.source,
-                "fired_at": alert.fired_at.isoformat(),
-            })
+            payload = json.dumps(
+                {
+                    "alert_id": alert.alert_id,
+                    "level": alert.level.value,
+                    "title": alert.title,
+                    "message": alert.message,
+                    "context": alert.context,
+                    "source": alert.source,
+                    "fired_at": alert.fired_at.isoformat(),
+                }
+            )
             await self._redis.lpush(self._RECENT_ALERTS_KEY, payload)
             await self._redis.ltrim(self._RECENT_ALERTS_KEY, 0, self._RECENT_ALERTS_LIMIT - 1)
         except Exception as exc:
@@ -258,6 +262,7 @@ class AlertService:
 # Pre-defined alert templates
 # ---------------------------------------------------------------------------
 
+
 def alert_global_halt_engaged(reason: str, operator: str) -> dict[str, Any]:
     return {
         "title": "Global Halt Engaged",
@@ -269,9 +274,7 @@ def alert_global_halt_engaged(reason: str, operator: str) -> dict[str, Any]:
 def alert_daily_drawdown_approaching(current_pct: float, limit_pct: float) -> dict[str, Any]:
     return {
         "title": "Daily Drawdown Warning",
-        "message": (
-            f"Current drawdown {current_pct:.2%} is approaching the {limit_pct:.2%} hard limit."
-        ),
+        "message": (f"Current drawdown {current_pct:.2%} is approaching the {limit_pct:.2%} hard limit."),
         "context": {"current_pct": current_pct, "limit_pct": limit_pct},
     }
 

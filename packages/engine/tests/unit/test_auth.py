@@ -17,6 +17,7 @@ from sentinel.auth.service import APIKeyService
 # APIKeyService tests
 # ---------------------------------------------------------------------------
 
+
 class TestAPIKeyService:
     def setup_method(self):
         self.service = APIKeyService()
@@ -39,17 +40,19 @@ class TestAPIKeyService:
 
     def test_load_clients_from_env_parses_json(self, monkeypatch):
         raw, hashed = self.service.generate_key()
-        clients_data = json.dumps([
-            {
-                "client_id": "test-agent",
-                "name": "Test Agent",
-                "hashed_key": hashed,
-                "scopes": ["read", "trade"],
-                "created_at": datetime.utcnow().isoformat(),
-                "is_active": True,
-                "rate_limit_per_minute": 30,
-            }
-        ])
+        clients_data = json.dumps(
+            [
+                {
+                    "client_id": "test-agent",
+                    "name": "Test Agent",
+                    "hashed_key": hashed,
+                    "scopes": ["read", "trade"],
+                    "created_at": datetime.utcnow().isoformat(),
+                    "is_active": True,
+                    "rate_limit_per_minute": 30,
+                }
+            ]
+        )
         monkeypatch.setenv("SENTINEL_API_KEYS_JSON", clients_data)
         monkeypatch.delenv("SENTINEL_MASTER_KEY", raising=False)
 
@@ -72,16 +75,18 @@ class TestAPIKeyService:
     @pytest.mark.asyncio
     async def test_authenticate_valid_key(self, monkeypatch):
         raw, hashed = self.service.generate_key()
-        clients_data = json.dumps([
-            {
-                "client_id": "auth-test",
-                "name": "Auth Test",
-                "hashed_key": hashed,
-                "scopes": ["read"],
-                "created_at": datetime.utcnow().isoformat(),
-                "is_active": True,
-            }
-        ])
+        clients_data = json.dumps(
+            [
+                {
+                    "client_id": "auth-test",
+                    "name": "Auth Test",
+                    "hashed_key": hashed,
+                    "scopes": ["read"],
+                    "created_at": datetime.utcnow().isoformat(),
+                    "is_active": True,
+                }
+            ]
+        )
         monkeypatch.setenv("SENTINEL_API_KEYS_JSON", clients_data)
         monkeypatch.delenv("SENTINEL_MASTER_KEY", raising=False)
 
@@ -100,16 +105,18 @@ class TestAPIKeyService:
     @pytest.mark.asyncio
     async def test_authenticate_inactive_client_returns_none(self, monkeypatch):
         raw, hashed = self.service.generate_key()
-        clients_data = json.dumps([
-            {
-                "client_id": "inactive-agent",
-                "name": "Inactive",
-                "hashed_key": hashed,
-                "scopes": ["read"],
-                "created_at": datetime.utcnow().isoformat(),
-                "is_active": False,
-            }
-        ])
+        clients_data = json.dumps(
+            [
+                {
+                    "client_id": "inactive-agent",
+                    "name": "Inactive",
+                    "hashed_key": hashed,
+                    "scopes": ["read"],
+                    "created_at": datetime.utcnow().isoformat(),
+                    "is_active": False,
+                }
+            ]
+        )
         monkeypatch.setenv("SENTINEL_API_KEYS_JSON", clients_data)
         monkeypatch.delenv("SENTINEL_MASTER_KEY", raising=False)
 
@@ -120,6 +127,7 @@ class TestAPIKeyService:
 # ---------------------------------------------------------------------------
 # Scope / admin bypass tests
 # ---------------------------------------------------------------------------
+
 
 def _make_client(scopes: list[str]) -> APIClient:
     return APIClient(
@@ -147,7 +155,6 @@ def test_require_scope_admin_bypasses_all_scopes():
 def test_require_scope_missing_scope_raises():
     from fastapi import HTTPException
 
-
     read_only_client = _make_client(["read"])
     # Directly invoke the scope logic
     scope = "trade"
@@ -160,6 +167,7 @@ def test_require_scope_missing_scope_raises():
 # ---------------------------------------------------------------------------
 # RateLimiter tests
 # ---------------------------------------------------------------------------
+
 
 class TestRateLimiter:
     @pytest.mark.asyncio

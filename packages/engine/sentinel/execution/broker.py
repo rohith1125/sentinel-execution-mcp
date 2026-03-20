@@ -4,6 +4,7 @@ BrokerAdapter protocol and shared order models.
 All broker implementations must satisfy this interface. The protocol design
 ensures that PaperBroker and AlpacaLiveBroker are interchangeable at runtime.
 """
+
 from __future__ import annotations
 
 from datetime import datetime

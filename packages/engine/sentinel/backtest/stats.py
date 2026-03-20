@@ -2,6 +2,7 @@
 Performance statistics for backtest results.
 All calculations are standard and verifiable.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -27,12 +28,12 @@ class BacktestStats:
     gross_profit: Decimal
     gross_loss: Decimal
     net_profit: Decimal
-    profit_factor: float      # gross_profit / abs(gross_loss)
+    profit_factor: float  # gross_profit / abs(gross_loss)
 
     # Risk-adjusted metrics
-    sharpe_ratio: float       # annualized, risk-free=0
-    sortino_ratio: float      # downside deviation only
-    calmar_ratio: float       # net_profit / max_drawdown
+    sharpe_ratio: float  # annualized, risk-free=0
+    sortino_ratio: float  # downside deviation only
+    calmar_ratio: float  # net_profit / max_drawdown
 
     # Drawdown
     max_drawdown_pct: float
@@ -42,12 +43,12 @@ class BacktestStats:
     # Expectancy
     avg_win: Decimal
     avg_loss: Decimal
-    avg_r_multiple: float     # average trade in R-multiples (key metric)
+    avg_r_multiple: float  # average trade in R-multiples (key metric)
     expectancy_per_trade: Decimal
 
     # Trade quality
     avg_hold_bars: float
-    avg_entry_efficiency: float   # how close to optimal entry (0-1)
+    avg_entry_efficiency: float  # how close to optimal entry (0-1)
     largest_win: Decimal
     largest_loss: Decimal
 
@@ -100,9 +101,7 @@ def compute_stats(
     net_profit = gross_profit + gross_loss
 
     profit_factor = (
-        float(gross_profit / abs(gross_loss))
-        if gross_loss != zero
-        else (float("inf") if gross_profit > zero else 0.0)
+        float(gross_profit / abs(gross_loss)) if gross_loss != zero else (float("inf") if gross_profit > zero else 0.0)
     )
 
     avg_win = gross_profit / n_win if n_win > 0 else zero

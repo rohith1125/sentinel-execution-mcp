@@ -220,14 +220,18 @@ class AlpacaProvider:
                 trade_count=raw.get("n"),
             )
 
-        latest_bar = _parse_bar(lb) if lb else Bar(
-            symbol=symbol,
-            timestamp=datetime.utcnow(),
-            open=quote.mid,
-            high=quote.mid,
-            low=quote.mid,
-            close=quote.mid,
-            volume=0,
+        latest_bar = (
+            _parse_bar(lb)
+            if lb
+            else Bar(
+                symbol=symbol,
+                timestamp=datetime.utcnow(),
+                open=quote.mid,
+                high=quote.mid,
+                low=quote.mid,
+                close=quote.mid,
+                volume=0,
+            )
         )
 
         prev_close: Decimal | None = None

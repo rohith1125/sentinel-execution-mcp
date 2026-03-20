@@ -191,7 +191,7 @@ def vote_volatility_sanity(
             vote="reject",
             weight=_W_VOLATILITY,
             reason=(
-                f"Stop distance ({stop_pct:.2f}%) is {stop_pct/atr_pct:.1f}x ATR — unrealistically wide. "
+                f"Stop distance ({stop_pct:.2f}%) is {stop_pct / atr_pct:.1f}x ATR — unrealistically wide. "
                 "Stop may never be triggered."
             ),
             metrics=metrics,
@@ -263,14 +263,8 @@ def vote_portfolio_concentration(
     existing_pct = existing_exposure / account_value if account_value > 0 else 0.0
 
     # Count existing positions in same side to detect over-concentration in direction
-    long_count = sum(
-        1 for p in positions.values()
-        if p.get("side", "long") == "long"
-    )
-    short_count = sum(
-        1 for p in positions.values()
-        if p.get("side", "short") == "short"
-    )
+    long_count = sum(1 for p in positions.values() if p.get("side", "long") == "long")
+    short_count = sum(1 for p in positions.values() if p.get("side", "short") == "short")
     total_gross_exposure_pct = float(portfolio_context.get("gross_exposure_pct", 0.0))
 
     metrics = {
@@ -287,8 +281,7 @@ def vote_portfolio_concentration(
             vote="reject",
             weight=_W_CONCENTRATION,
             reason=(
-                f"Position already at {existing_pct:.1%} of account (max {max_pct:.0%}). "
-                "Cannot add more exposure."
+                f"Position already at {existing_pct:.1%} of account (max {max_pct:.0%}). Cannot add more exposure."
             ),
             metrics=metrics,
         )
@@ -459,8 +452,7 @@ def vote_time_of_day(current_time: datetime) -> VoteRecord:
             vote="abstain",
             weight=_W_TIME,
             reason=(
-                f"Near close: {t.strftime('%H:%M')} ET "
-                f"(>= {close_buffer.strftime('%H:%M')}). Avoid new positions."
+                f"Near close: {t.strftime('%H:%M')} ET (>= {close_buffer.strftime('%H:%M')}). Avoid new positions."
             ),
             metrics=metrics,
         )

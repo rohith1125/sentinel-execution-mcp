@@ -5,6 +5,7 @@ All database tests use a fresh schema per test function — tables are created
 at the start of each test and dropped at the end. This ensures full isolation
 at the cost of some setup overhead (acceptable for correctness).
 """
+
 from __future__ import annotations
 
 from datetime import datetime, timedelta

@@ -140,7 +140,7 @@ def compute_price_efficiency(close: pd.Series, period: int = 14) -> float:
     if len(close) < period + 1:
         return 0.5  # neutral when insufficient data
 
-    recent = close.iloc[-(period + 1):]
+    recent = close.iloc[-(period + 1) :]
     direction = abs(float(recent.iloc[-1]) - float(recent.iloc[0]))
     path = float(recent.diff().abs().sum())
     if path == 0:
@@ -171,10 +171,9 @@ def compute_hurst_exponent(close: pd.Series, max_lag: int = 20) -> float:
         return 0.5
 
     n_points = min(12, upper_lag - 1)
-    lags_list = sorted(set(
-        max(2, int(round(2 ** (i * math.log2(upper_lag) / n_points))))
-        for i in range(1, n_points + 1)
-    ))
+    lags_list = sorted(
+        set(max(2, int(round(2 ** (i * math.log2(upper_lag) / n_points)))) for i in range(1, n_points + 1))
+    )
     rs_values: list[tuple[float, float]] = []
 
     for lag in lags_list:

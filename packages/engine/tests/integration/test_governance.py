@@ -1,4 +1,5 @@
 """Integration tests for strategy governance lifecycle."""
+
 from __future__ import annotations
 
 import pytest
@@ -9,6 +10,7 @@ from sentinel.governance.service import GovernanceError, GovernanceService
 # ---------------------------------------------------------------------------
 # Test 1: register_strategy creates DRAFT record
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_register_strategy_creates_draft(db_session):
@@ -28,6 +30,7 @@ async def test_register_strategy_creates_draft(db_session):
 # Test 2: evaluate_promotion returns not_eligible for fresh strategy (no trades)
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_evaluate_promotion_not_eligible_no_trades(db_session):
     svc = GovernanceService(db_session)
@@ -37,9 +40,7 @@ async def test_evaluate_promotion_not_eligible_no_trades(db_session):
         config={},
     )
 
-    eligible, evaluation = await svc.evaluate_promotion(
-        "test_strat_2", StrategyState.BACKTEST_APPROVED
-    )
+    eligible, evaluation = await svc.evaluate_promotion("test_strat_2", StrategyState.BACKTEST_APPROVED)
 
     assert not eligible
     assert "gaps" in evaluation
@@ -49,6 +50,7 @@ async def test_evaluate_promotion_not_eligible_no_trades(db_session):
 # ---------------------------------------------------------------------------
 # Test 3: promote_strategy raises GovernanceError if criteria not met
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_promote_raises_if_criteria_not_met(db_session):
@@ -71,6 +73,7 @@ async def test_promote_raises_if_criteria_not_met(db_session):
 # Test 4: live promotion requires human approved_by (not 'system')
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_live_promotion_requires_human_approver(db_session):
     svc = GovernanceService(db_session)
@@ -91,6 +94,7 @@ async def test_live_promotion_requires_human_approver(db_session):
 # ---------------------------------------------------------------------------
 # Test 5: suspend_strategy changes state to SUSPENDED
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_suspend_strategy(db_session):
@@ -113,6 +117,7 @@ async def test_suspend_strategy(db_session):
 # ---------------------------------------------------------------------------
 # Test 6: strategy starts in DRAFT, can be fetched by name
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_strategy_starts_in_draft_and_is_fetchable(db_session):

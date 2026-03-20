@@ -17,7 +17,7 @@ from sentinel.strategy.registry import registry
 
 _ADX_MIN = 20.0
 _PULLBACK_MAX_BARS = 3
-_PULLBACK_TOUCH_TOLERANCE = 0.005   # 0.5% tolerance for "touching" EMA21
+_PULLBACK_TOUCH_TOLERANCE = 0.005  # 0.5% tolerance for "touching" EMA21
 _RR_RATIO = 2.5
 _ATR_STOP_MULT = 2.0
 
@@ -54,13 +54,19 @@ class EMATrendContinuationStrategy(StrategyBase):
         compatible, compat_score = self.is_regime_compatible(regime)
         if not compatible:
             return self._no_signal(
-                self.name, symbol, bars, compat_score,
+                self.name,
+                symbol,
+                bars,
+                compat_score,
                 f"Regime {regime.label.value} incompatible.",
             )
 
         if len(bars) < self.min_bars_required:
             return self._no_signal(
-                self.name, symbol, bars, compat_score,
+                self.name,
+                symbol,
+                bars,
+                compat_score,
                 f"Insufficient bars: need {self.min_bars_required}, have {len(bars)}.",
             )
 
@@ -87,14 +93,20 @@ class EMATrendContinuationStrategy(StrategyBase):
 
         if not (bullish_stack or bearish_stack):
             return self._no_signal(
-                self.name, symbol, bars, compat_score,
+                self.name,
+                symbol,
+                bars,
+                compat_score,
                 f"EMA stack not aligned: EMA8={e8:.2f}, EMA21={e21:.2f}, EMA50={e50:.2f}.",
             )
 
         # ADX confirmation
         if adx_val < _ADX_MIN:
             return self._no_signal(
-                self.name, symbol, bars, compat_score,
+                self.name,
+                symbol,
+                bars,
+                compat_score,
                 f"ADX={adx_val:.1f} below threshold {_ADX_MIN} — trend not confirmed.",
             )
 
@@ -119,19 +131,28 @@ class EMATrendContinuationStrategy(StrategyBase):
 
         if not pullback_found:
             return self._no_signal(
-                self.name, symbol, bars, compat_score,
+                self.name,
+                symbol,
+                bars,
+                compat_score,
                 f"No clean pullback to EMA21 ({e21:.2f}) in last {_PULLBACK_MAX_BARS} bars.",
             )
 
         # Make sure current bar has bounced back (for long: close above EMA21)
         if bullish_stack and latest_close < e21:
             return self._no_signal(
-                self.name, symbol, bars, compat_score,
+                self.name,
+                symbol,
+                bars,
+                compat_score,
                 f"Price ({latest_close:.2f}) still below EMA21 ({e21:.2f}) — no bounce yet.",
             )
         if bearish_stack and latest_close > e21:
             return self._no_signal(
-                self.name, symbol, bars, compat_score,
+                self.name,
+                symbol,
+                bars,
+                compat_score,
                 f"Price ({latest_close:.2f}) still above EMA21 ({e21:.2f}) — no bounce yet.",
             )
 
@@ -139,22 +160,18 @@ class EMATrendContinuationStrategy(StrategyBase):
         if bullish_stack:
             side = OrderSide.BUY
             entry = Decimal(str(round(prior_bar_high * 1.001, 4)))
-            stop = Decimal(str(round(max(float(e50) - _ATR_STOP_MULT * atr_val,
-                                         float(e50) * 0.995), 4)))
+            stop = Decimal(str(round(max(float(e50) - _ATR_STOP_MULT * atr_val, float(e50) * 0.995), 4)))
         else:
             side = OrderSide.SELL
             prior_bar_low = float(low.iloc[-2])
             entry = Decimal(str(round(prior_bar_low * 0.999, 4)))
-            stop = Decimal(str(round(min(float(e50) + _ATR_STOP_MULT * atr_val,
-                                         float(e50) * 1.005), 4)))
+            stop = Decimal(str(round(min(float(e50) + _ATR_STOP_MULT * atr_val, float(e50) * 1.005), 4)))
 
         target = self.compute_target(entry, stop, rr_ratio=_RR_RATIO)
 
         confidence = min(
             0.90,
-            compat_score * 0.45
-            + min((adx_val - _ADX_MIN) / 50.0, 0.3)
-            + 0.25,
+            compat_score * 0.45 + min((adx_val - _ADX_MIN) / 50.0, 0.3) + 0.25,
         )
 
         indicators = {

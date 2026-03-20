@@ -72,9 +72,7 @@ class Snapshot(BaseModel):
     def intraday_change_pct(self) -> float | None:
         if self.prev_close is None or self.prev_close == 0:
             return None
-        return float(
-            (self.latest_bar.close - self.prev_close) / self.prev_close * 100
-        )
+        return float((self.latest_bar.close - self.prev_close) / self.prev_close * 100)
 
 
 class ProviderError(Exception):

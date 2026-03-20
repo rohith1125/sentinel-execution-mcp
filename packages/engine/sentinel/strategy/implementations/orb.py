@@ -15,12 +15,12 @@ from sentinel.regime.models import RegimeSnapshot
 from sentinel.strategy.base import StrategyBase, StrategyResult, StrategySignal
 from sentinel.strategy.registry import registry
 
-_OR_MINUTES = 15                    # opening range window
+_OR_MINUTES = 15  # opening range window
 _EARLIEST_ENTRY_TIME = time(9, 45)  # ET
-_TIME_STOP_TIME = time(11, 0)       # ET — exit if target not hit
-_VOLUME_BREAKOUT_MULT = 2.0         # volume on breakout bar >= 2x OR volume
-_PRE_MARKET_GAP_MAX = 2.0           # percent
-_ATR_PANIC_MULTIPLIER = 4.0         # if ATR > X% of price, skip (event day)
+_TIME_STOP_TIME = time(11, 0)  # ET — exit if target not hit
+_VOLUME_BREAKOUT_MULT = 2.0  # volume on breakout bar >= 2x OR volume
+_PRE_MARKET_GAP_MAX = 2.0  # percent
+_ATR_PANIC_MULTIPLIER = 4.0  # if ATR > X% of price, skip (event day)
 _RR_PREFERRED = 2.0
 
 
@@ -49,7 +49,7 @@ class OpeningRangeBreakoutStrategy(StrategyBase):
         RegimeLabel.RISK_OFF,
         RegimeLabel.EVENT_DISTORTED,
     ]
-    min_bars_required: ClassVar[int] = 4    # at least 4 x 5-min bars after open (for OR + confirmation)
+    min_bars_required: ClassVar[int] = 4  # at least 4 x 5-min bars after open (for OR + confirmation)
     default_timeframe: ClassVar[str] = "5min"
 
     def evaluate(
@@ -61,13 +61,19 @@ class OpeningRangeBreakoutStrategy(StrategyBase):
         compatible, compat_score = self.is_regime_compatible(regime)
         if not compatible:
             return self._no_signal(
-                self.name, symbol, bars, compat_score,
+                self.name,
+                symbol,
+                bars,
+                compat_score,
                 f"Regime {regime.label.value} incompatible.",
             )
 
         if len(bars) < self.min_bars_required:
             return self._no_signal(
-                self.name, symbol, bars, compat_score,
+                self.name,
+                symbol,
+                bars,
+                compat_score,
                 f"Insufficient bars: need {self.min_bars_required}, have {len(bars)}.",
             )
 
@@ -78,14 +84,20 @@ class OpeningRangeBreakoutStrategy(StrategyBase):
         # Time stop — don't enter after 11:00 AM ET
         if bar_time >= _TIME_STOP_TIME:
             return self._no_signal(
-                self.name, symbol, bars, compat_score,
+                self.name,
+                symbol,
+                bars,
+                compat_score,
                 f"Past time stop: {bar_time} >= {_TIME_STOP_TIME} ET. No new ORB entries.",
             )
 
         # Must be after 9:45 AM ET (OR must be fully formed)
         if bar_time < _EARLIEST_ENTRY_TIME:
             return self._no_signal(
-                self.name, symbol, bars, compat_score,
+                self.name,
+                symbol,
+                bars,
+                compat_score,
                 f"Too early: {bar_time} < {_EARLIEST_ENTRY_TIME} ET. OR not yet set.",
             )
 
@@ -103,7 +115,10 @@ class OpeningRangeBreakoutStrategy(StrategyBase):
         atr_pct = atr_val / latest_close * 100 if latest_close > 0 else 0.0
         if atr_pct > _ATR_PANIC_MULTIPLIER:
             return self._no_signal(
-                self.name, symbol, bars, compat_score,
+                self.name,
+                symbol,
+                bars,
+                compat_score,
                 f"ATR% = {atr_pct:.2f}% exceeds panic threshold {_ATR_PANIC_MULTIPLIER}%. Likely event day.",
             )
 
@@ -122,7 +137,10 @@ class OpeningRangeBreakoutStrategy(StrategyBase):
 
         if or_width <= 0:
             return self._no_signal(
-                self.name, symbol, bars, compat_score,
+                self.name,
+                symbol,
+                bars,
+                compat_score,
                 "OR width is zero — cannot compute targets.",
             )
 
@@ -152,14 +170,20 @@ class OpeningRangeBreakoutStrategy(StrategyBase):
 
         if not (long_breakout or short_breakout):
             return self._no_signal(
-                self.name, symbol, bars, compat_score,
+                self.name,
+                symbol,
+                bars,
+                compat_score,
                 f"No ORB trigger: close={latest_close:.2f}, OR=[{or_low:.2f},{or_high:.2f}].",
             )
 
         # Volume confirmation on breakout bar
         if or_avg_volume > 0 and current_volume < _VOLUME_BREAKOUT_MULT * or_avg_volume:
             return self._no_signal(
-                self.name, symbol, bars, compat_score,
+                self.name,
+                symbol,
+                bars,
+                compat_score,
                 f"Breakout volume insufficient: {current_volume:,.0f} < {_VOLUME_BREAKOUT_MULT}x OR avg ({or_avg_volume:,.0f}).",
             )
 
@@ -180,9 +204,7 @@ class OpeningRangeBreakoutStrategy(StrategyBase):
 
         confidence = min(
             0.85,
-            compat_score * 0.45
-            + min(current_volume / max(or_avg_volume, 1) / (_VOLUME_BREAKOUT_MULT * 2), 0.3)
-            + 0.25,
+            compat_score * 0.45 + min(current_volume / max(or_avg_volume, 1) / (_VOLUME_BREAKOUT_MULT * 2), 0.3) + 0.25,
         )
 
         indicators = {
@@ -214,7 +236,7 @@ class OpeningRangeBreakoutStrategy(StrategyBase):
             notes=(
                 f"ORB {'long' if side == OrderSide.BUY else 'short'}: "
                 f"OR=[{or_low:.2f},{or_high:.2f}] width={or_width:.2f}. "
-                f"Volume={current_volume:,.0f} ({current_volume/or_avg_volume:.1f}x OR avg). "
+                f"Volume={current_volume:,.0f} ({current_volume / or_avg_volume:.1f}x OR avg). "
                 f"Target R:R={rr:.1f}."
             ),
         )

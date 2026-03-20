@@ -100,9 +100,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         # Only rate-limit if a client_id is attached (set by auth dependency or bypass)
         client_id = request.headers.get("X-API-Key", "anonymous")
         redis = getattr(request.app.state, "redis", None)
-        allowed, remaining = await _rate_limiter.check_and_increment(
-            client_id, settings.rate_limit_per_minute, redis
-        )
+        allowed, remaining = await _rate_limiter.check_and_increment(client_id, settings.rate_limit_per_minute, redis)
         if not allowed:
             return JSONResponse(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -232,8 +230,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # Routers — inject DB session dependency properly
     # ---------------------------------------------------------------------------
 
-
-
     async def db_session() -> Any:  # type: ignore[return]
         factory = get_session_factory(settings)
         async with factory() as session:
@@ -258,6 +254,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     # Override DB session dependency for all routers that use `db_session_placeholder`
     from sentinel.db.base import db_session_placeholder
+
     app.dependency_overrides[db_session_placeholder] = db_session
 
     logger.info("engine.routes_mounted", routers=10)

@@ -21,11 +21,11 @@ class StrategySignal(BaseModel):
 
     symbol: str
     side: OrderSide
-    confidence: float                           # 0-1
-    entry_price: Decimal | None = None          # None = market order
+    confidence: float  # 0-1
+    entry_price: Decimal | None = None  # None = market order
     stop_price: Decimal
     target_price: Decimal
-    timeframe: str                              # "1min", "5min", "1day", etc.
+    timeframe: str  # "1min", "5min", "1day", etc.
     supporting_indicators: dict[str, float] = {}
     invalidation_conditions: list[str] = []
     max_hold_bars: int | None = None
@@ -56,11 +56,11 @@ class StrategyResult(BaseModel):
 
     strategy_name: str
     symbol: str
-    signal: StrategySignal | None           # None = no signal this bar
+    signal: StrategySignal | None  # None = no signal this bar
     evaluated_at: datetime
     bars_used: int
-    regime_compatibility: float             # 0-1, how suitable was the regime
-    rejection_reason: str | None = None     # why signal is None
+    regime_compatibility: float  # 0-1, how suitable was the regime
+    rejection_reason: str | None = None  # why signal is None
 
 
 class StrategyBase(ABC):
@@ -68,7 +68,7 @@ class StrategyBase(ABC):
 
     name: ClassVar[str]
     supported_regimes: ClassVar[list[RegimeLabel]]
-    anti_regimes: ClassVar[list[RegimeLabel]]       # hard blocks — always reject
+    anti_regimes: ClassVar[list[RegimeLabel]]  # hard blocks — always reject
     min_bars_required: ClassVar[int]
     default_timeframe: ClassVar[str]
 

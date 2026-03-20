@@ -43,16 +43,10 @@ class WatchlistEntry(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     symbol: Mapped[str] = mapped_column(String(20), nullable=False, unique=True, index=True)
-    asset_class: Mapped[str] = mapped_column(
-        String(20), nullable=False, default=AssetClass.EQUITY.value
-    )
-    group_tags: Mapped[list[str] | None] = mapped_column(
-        ARRAY(String), nullable=True, default=list
-    )
+    asset_class: Mapped[str] = mapped_column(String(20), nullable=False, default=AssetClass.EQUITY.value)
+    group_tags: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True, default=list)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
-    added_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now()
-    )
+    added_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
     def __repr__(self) -> str:
@@ -81,9 +75,7 @@ class Order(Base):
     limit_price: Mapped[Decimal | None] = mapped_column(Numeric(18, 8), nullable=True)
     stop_price: Mapped[Decimal | None] = mapped_column(Numeric(18, 8), nullable=True)
     time_in_force: Mapped[str] = mapped_column(String(10), nullable=False, default=TimeInForce.DAY.value)
-    status: Mapped[str] = mapped_column(
-        String(20), nullable=False, default=OrderStatus.PENDING.value, index=True
-    )
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default=OrderStatus.PENDING.value, index=True)
     filled_qty: Mapped[Decimal] = mapped_column(Numeric(18, 8), nullable=False, default=Decimal("0"))
     filled_avg_price: Mapped[Decimal | None] = mapped_column(Numeric(18, 8), nullable=True)
     strategy_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
@@ -94,13 +86,9 @@ class Order(Base):
     cancelled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     rejection_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     metadata_: Mapped[dict | None] = mapped_column("metadata", JSONB, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
-    trade_journals: Mapped[list[TradeJournal]] = relationship(
-        "TradeJournal", back_populates="order", lazy="select"
-    )
+    trade_journals: Mapped[list[TradeJournal]] = relationship("TradeJournal", back_populates="order", lazy="select")
 
     def __repr__(self) -> str:
         return f"<Order {self.client_order_id} {self.symbol} {self.side} {self.status}>"
@@ -120,15 +108,9 @@ class Position(Base):
     quantity: Mapped[Decimal] = mapped_column(Numeric(18, 8), nullable=False)
     avg_entry_price: Mapped[Decimal] = mapped_column(Numeric(18, 8), nullable=False)
     current_price: Mapped[Decimal | None] = mapped_column(Numeric(18, 8), nullable=True)
-    unrealized_pnl: Mapped[Decimal] = mapped_column(
-        Numeric(18, 8), nullable=False, default=Decimal("0")
-    )
-    realized_pnl: Mapped[Decimal] = mapped_column(
-        Numeric(18, 8), nullable=False, default=Decimal("0")
-    )
-    opened_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now()
-    )
+    unrealized_pnl: Mapped[Decimal] = mapped_column(Numeric(18, 8), nullable=False, default=Decimal("0"))
+    realized_pnl: Mapped[Decimal] = mapped_column(Numeric(18, 8), nullable=False, default=Decimal("0"))
+    opened_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     strategy_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     account_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
@@ -153,17 +135,13 @@ class StrategyRecord(Base):
     )
     name: Mapped[str] = mapped_column(String(128), nullable=False, unique=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
-    state: Mapped[str] = mapped_column(
-        String(30), nullable=False, default=StrategyState.DRAFT.value, index=True
-    )
+    state: Mapped[str] = mapped_column(String(30), nullable=False, default=StrategyState.DRAFT.value, index=True)
     config: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     performance_metrics: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     promoted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     promoted_by: Mapped[str | None] = mapped_column(String(128), nullable=True)
     demotion_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
@@ -197,9 +175,7 @@ class AuditEvent(Base):
     event_type: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
     symbol: Mapped[str | None] = mapped_column(String(20), nullable=True, index=True)
     strategy_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
-    timestamp: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, index=True
-    )
+    timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
     regime_snapshot: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     signal_details: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     risk_check_results: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
@@ -208,9 +184,7 @@ class AuditEvent(Base):
     sizing_details: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     execution_details: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     outcome: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
     @property
     def event_id(self) -> str:
@@ -230,9 +204,7 @@ class TradeJournal(Base):
     __tablename__ = "trade_journals"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    order_id: Mapped[str] = mapped_column(
-        UUID(as_uuid=False), ForeignKey("orders.id"), nullable=False, index=True
-    )
+    order_id: Mapped[str] = mapped_column(UUID(as_uuid=False), ForeignKey("orders.id"), nullable=False, index=True)
     entry_timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     exit_timestamp: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     symbol: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
@@ -242,12 +214,8 @@ class TradeJournal(Base):
     exit_price: Mapped[Decimal | None] = mapped_column(Numeric(18, 8), nullable=True)
     realized_pnl: Mapped[Decimal | None] = mapped_column(Numeric(18, 8), nullable=True)
     pnl_pct: Mapped[Decimal | None] = mapped_column(Numeric(10, 6), nullable=True)
-    mae: Mapped[Decimal | None] = mapped_column(
-        Numeric(18, 8), nullable=True, comment="Max adverse excursion"
-    )
-    mfe: Mapped[Decimal | None] = mapped_column(
-        Numeric(18, 8), nullable=True, comment="Max favorable excursion"
-    )
+    mae: Mapped[Decimal | None] = mapped_column(Numeric(18, 8), nullable=True, comment="Max adverse excursion")
+    mfe: Mapped[Decimal | None] = mapped_column(Numeric(18, 8), nullable=True, comment="Max favorable excursion")
     holding_period_seconds: Mapped[int | None] = mapped_column(Integer, nullable=True)
     strategy_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     regime_at_entry: Mapped[str | None] = mapped_column(String(40), nullable=True)
@@ -278,14 +246,9 @@ class StrategyPromotion(Base):
     metrics_at_promotion: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     approved_by: Mapped[str | None] = mapped_column(String(128), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
     strategy: Mapped[StrategyRecord] = relationship("StrategyRecord", back_populates="promotions")
 
     def __repr__(self) -> str:
-        return (
-            f"<StrategyPromotion {self.strategy_id} "
-            f"{self.from_state} -> {self.to_state}>"
-        )
+        return f"<StrategyPromotion {self.strategy_id} {self.from_state} -> {self.to_state}>"

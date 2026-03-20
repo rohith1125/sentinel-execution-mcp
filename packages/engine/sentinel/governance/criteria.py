@@ -4,6 +4,7 @@ PromotionCriteria — thresholds required to promote a strategy to a given state
 Criteria are deliberately conservative. A strategy must earn each promotion
 by demonstrating real edge in progressively more demanding conditions.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass

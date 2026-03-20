@@ -37,10 +37,10 @@ _UNIVERSE: dict[str, Decimal] = {
 Scenario = Literal["bull_trend", "bear_trend", "choppy", "low_volume"]
 
 _SCENARIO_PARAMS: dict[Scenario, dict[str, float]] = {
-    "bull_trend":  {"drift": 0.0008,  "vol": 0.012, "volume_mult": 1.2},
-    "bear_trend":  {"drift": -0.0008, "vol": 0.015, "volume_mult": 0.9},
-    "choppy":      {"drift": 0.0,     "vol": 0.020, "volume_mult": 1.0},
-    "low_volume":  {"drift": 0.0001,  "vol": 0.008, "volume_mult": 0.3},
+    "bull_trend": {"drift": 0.0008, "vol": 0.012, "volume_mult": 1.2},
+    "bear_trend": {"drift": -0.0008, "vol": 0.015, "volume_mult": 0.9},
+    "choppy": {"drift": 0.0, "vol": 0.020, "volume_mult": 1.0},
+    "low_volume": {"drift": 0.0001, "vol": 0.008, "volume_mult": 0.3},
 }
 
 

@@ -33,15 +33,16 @@ class BulkEvaluateRequest(BaseModel):
 
 def _snapshot_to_dict(snap: object) -> dict:
     from sentinel.regime.models import RegimeSnapshot as RS
+
     s: RS = snap  # type: ignore[assignment]
     return {
         "label": s.label.value,
         "confidence": s.confidence,
         "tradeability_score": s.tradeability_score,
         "supporting_metrics": s.supporting_metrics,
-        "strategy_compatibility": {
-            k: v for k, v in s.strategy_compatibility.__dict__.items()
-        } if s.strategy_compatibility else {},
+        "strategy_compatibility": {k: v for k, v in s.strategy_compatibility.__dict__.items()}
+        if s.strategy_compatibility
+        else {},
         "classified_at": s.classified_at.isoformat(),
         "bars_analyzed": s.bars_analyzed,
         "reasoning": s.reasoning,

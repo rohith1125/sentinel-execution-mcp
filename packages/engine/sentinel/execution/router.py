@@ -22,6 +22,7 @@ def _get_paper_broker(request: Request, settings: Settings) -> Any:
     from sentinel.execution.paper import PaperBroker
     from sentinel.market.mock import MockProvider
     from sentinel.market.service import MarketDataService
+
     redis = getattr(request.app.state, "redis", None)
     if redis is None:
         raise HTTPException(status_code=503, detail="Redis unavailable — paper broker requires Redis")
@@ -43,6 +44,7 @@ class PaperOrderRequest(BaseModel):
         if v <= 0:
             raise ValueError(f"quantity must be positive, got {v}")
         return v
+
     limit_price: float | None = None
     stop_price: float | None = None
     time_in_force: str = "day"
@@ -83,6 +85,7 @@ async def submit_paper_order(
 ) -> dict:
     from sentinel.execution.broker import OrderRequest
     from sentinel.risk.firewall import RiskFirewall
+
     broker = _get_paper_broker(request, settings)
 
     # Check kill switch before submitting
@@ -194,6 +197,7 @@ async def flatten_all(
             side_str = pos.get("side", "long")
             sell_side = OrderSide.SELL if side_str in ("long", "buy") else OrderSide.BUY
             from sentinel.execution.broker import OrderRequest
+
             req = OrderRequest(
                 client_order_id=f"FLATTEN-{uuid.uuid4().hex[:8]}",
                 symbol=symbol,
@@ -225,6 +229,7 @@ async def reset_paper(
 
 
 # Portfolio-level routes (aliased from /portfolio prefix used by engine-client)
+
 
 @router.get("/portfolio/status")
 async def portfolio_status(

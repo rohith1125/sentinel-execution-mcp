@@ -29,11 +29,13 @@ _APPROVE_THRESHOLD = 0.65
 _HUMAN_THRESHOLD = 0.45
 
 # Hard-reject voters — a single reject from these immediately kills the trade
-_HARD_REJECT_VOTERS = frozenset([
-    "regime_gate",
-    "concentration_filter",
-    "time_of_day_filter",
-])
+_HARD_REJECT_VOTERS = frozenset(
+    [
+        "regime_gate",
+        "concentration_filter",
+        "time_of_day_filter",
+    ]
+)
 
 # Anomaly conditions that escalate APPROVED → REQUIRES_HUMAN_APPROVAL
 _LARGE_POSITION_PCT = 0.05  # position would be > 5% of account
@@ -92,11 +94,13 @@ class DecisionCommittee:
             votes.append(vote_regime_compatibility(signal, regime, strategy))
 
         # 2. Liquidity
-        votes.append(vote_liquidity(
-            request.snapshot,
-            min_spread_bps=self._min_spread_bps,
-            min_volume=self._min_volume,
-        ))
+        votes.append(
+            vote_liquidity(
+                request.snapshot,
+                min_spread_bps=self._min_spread_bps,
+                min_volume=self._min_volume,
+            )
+        )
 
         # 3. Volatility sanity
         votes.append(vote_volatility_sanity(bars, signal))
@@ -105,15 +109,17 @@ class DecisionCommittee:
         votes.append(vote_risk_reward(signal, min_rr=self._min_rr))
 
         # 5. Concentration
-        votes.append(vote_portfolio_concentration(
-            symbol=request.symbol,
-            side=signal.side,
-            portfolio_context={
-                **request.portfolio_context,
-                "account_value": float(request.account_value),
-            },
-            max_pct=self._max_concentration_pct,
-        ))
+        votes.append(
+            vote_portfolio_concentration(
+                symbol=request.symbol,
+                side=signal.side,
+                portfolio_context={
+                    **request.portfolio_context,
+                    "account_value": float(request.account_value),
+                },
+                max_pct=self._max_concentration_pct,
+            )
+        )
 
         # 6. Beta / macro context
         votes.append(vote_beta_context(regime, signal))
@@ -184,8 +190,7 @@ class DecisionCommittee:
 
         # Build explanation
         vote_summary = ", ".join(
-            f"{v.voter}={'✓' if v.vote == 'approve' else ('?' if v.vote == 'abstain' else '✗')}"
-            for v in votes
+            f"{v.voter}={'✓' if v.vote == 'approve' else ('?' if v.vote == 'abstain' else '✗')}" for v in votes
         )
         explanation = (
             f"Outcome: {raw_outcome.value}. "
@@ -230,21 +235,14 @@ class DecisionCommittee:
         positions = request.portfolio_context.get("positions", {})
         account_value = float(request.account_value)
         if account_value > 0:
-            existing_notional = float(
-                positions.get(request.symbol, {}).get("notional", 0.0)
-            )
+            existing_notional = float(positions.get(request.symbol, {}).get("notional", 0.0))
             pct = existing_notional / account_value
             if pct > _LARGE_POSITION_PCT:
-                anomalies.append(
-                    f"Large existing position: {pct:.1%} of account in {request.symbol}."
-                )
+                anomalies.append(f"Large existing position: {pct:.1%} of account in {request.symbol}.")
 
         # High volatility regime
         if regime.tradeability_score < _HIGH_VOL_TRADEABILITY_THRESHOLD:
-            anomalies.append(
-                f"Low tradeability score: {regime.tradeability_score:.2f} "
-                f"(regime: {regime.label.value})."
-            )
+            anomalies.append(f"Low tradeability score: {regime.tradeability_score:.2f} (regime: {regime.label.value}).")
 
         # New strategy (not yet in live state) — check notes
         _strategy = self._registry.get(signal.side.value)  # loose check
@@ -254,8 +252,7 @@ class DecisionCommittee:
         # Score close to approval boundary (uncertain)
         if _APPROVE_THRESHOLD <= score < _APPROVE_THRESHOLD + 0.05:
             anomalies.append(
-                f"Decision score {score:.3f} is close to approval boundary "
-                f"({_APPROVE_THRESHOLD}). Low conviction."
+                f"Decision score {score:.3f} is close to approval boundary ({_APPROVE_THRESHOLD}). Low conviction."
             )
 
         return anomalies

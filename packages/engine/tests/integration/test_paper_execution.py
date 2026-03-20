@@ -2,6 +2,7 @@
 Integration tests for paper execution lifecycle.
 Tests the PaperBroker end-to-end including order submission, fills, and account state.
 """
+
 from __future__ import annotations
 
 from datetime import UTC, datetime
@@ -21,6 +22,7 @@ from sentinel.market.provider import Bar, Quote
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def settings() -> Settings:
     return Settings(
@@ -35,6 +37,7 @@ def settings() -> Settings:
 async def redis_client():
     """Real Redis client, flushed before each test."""
     import redis.asyncio as aioredis
+
     client = aioredis.from_url("redis://localhost:6379/0")
     # Clear paper keys only
     async for key in client.scan_iter("sentinel:paper:*"):
@@ -82,6 +85,7 @@ def _order(
     tif: TimeInForce = TimeInForce.DAY,
 ) -> OrderRequest:
     import uuid
+
     return OrderRequest(
         client_order_id=f"test-{uuid.uuid4().hex[:8]}",
         symbol=symbol,
@@ -117,6 +121,7 @@ def _bar(
 # Test 1: Market order fills immediately
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_market_order_fills_immediately(settings, redis_client):
     svc = _make_market_service()
@@ -134,6 +139,7 @@ async def test_market_order_fills_immediately(settings, redis_client):
 # ---------------------------------------------------------------------------
 # Test 2: Limit order stays pending until price crosses
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_limit_order_fills_when_price_crosses(settings, redis_client):
@@ -161,6 +167,7 @@ async def test_limit_order_fills_when_price_crosses(settings, redis_client):
 # Test 3: Cancel pending order
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_cancel_pending_limit_order(settings, redis_client):
     svc = _make_market_service()
@@ -182,6 +189,7 @@ async def test_cancel_pending_limit_order(settings, redis_client):
 # Test 4: Paper account reset restores starting cash
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_paper_account_reset_restores_cash(settings, redis_client):
     svc = _make_market_service()
@@ -201,6 +209,7 @@ async def test_paper_account_reset_restores_cash(settings, redis_client):
 # ---------------------------------------------------------------------------
 # Test 5: DAY orders cancelled on session reset
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_day_orders_cancelled_on_session_reset(settings, redis_client):
@@ -222,6 +231,7 @@ async def test_day_orders_cancelled_on_session_reset(settings, redis_client):
 # Test 6: GTC order survives session reset
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_gtc_order_survives_session_reset(settings, redis_client):
     svc = _make_market_service()
@@ -242,6 +252,7 @@ async def test_gtc_order_survives_session_reset(settings, redis_client):
 # ---------------------------------------------------------------------------
 # Test 7: Gap fill on stop order
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_gap_fill_on_sell_stop(settings, redis_client):
@@ -272,17 +283,14 @@ async def test_gap_fill_on_sell_stop(settings, redis_client):
     assert fill.status == OrderStatus.FILLED
     # Gap fill: should fill at ~$95 (bar open), not $100 (stop price)
     # After slippage deduction for sell, fill_price < open slightly
-    assert fill.filled_avg_price < Decimal("100.00"), (
-        f"Expected gap fill at ~$95, got {fill.filled_avg_price}"
-    )
-    assert fill.filled_avg_price > Decimal("90.00"), (
-        f"Fill price unrealistically low: {fill.filled_avg_price}"
-    )
+    assert fill.filled_avg_price < Decimal("100.00"), f"Expected gap fill at ~$95, got {fill.filled_avg_price}"
+    assert fill.filled_avg_price > Decimal("90.00"), f"Fill price unrealistically low: {fill.filled_avg_price}"
 
 
 # ---------------------------------------------------------------------------
 # Test 8: Large order gets partial fill
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_large_order_gets_partial_fill(settings, redis_client):
@@ -301,6 +309,7 @@ async def test_large_order_gets_partial_fill(settings, redis_client):
 # ---------------------------------------------------------------------------
 # Test 9: get_open_orders returns only open orders
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_get_open_orders_returns_submitted(settings, redis_client):

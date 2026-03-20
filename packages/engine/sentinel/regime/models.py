@@ -38,13 +38,13 @@ class RegimeSnapshot:
     """Full classification output for a symbol at a point in time."""
 
     label: RegimeLabel
-    confidence: float                       # 0-1
-    tradeability_score: float               # 0-1, 0 = do not trade
-    supporting_metrics: dict[str, float]    # adx, atr_pct, rsi, vol_ratio, hurst, etc.
+    confidence: float  # 0-1
+    tradeability_score: float  # 0-1, 0 = do not trade
+    supporting_metrics: dict[str, float]  # adx, atr_pct, rsi, vol_ratio, hurst, etc.
     strategy_compatibility: StrategyCompatibility
     classified_at: datetime
     bars_analyzed: int
-    reasoning: str                          # human-readable explanation
+    reasoning: str  # human-readable explanation
 
     def is_tradeable(self, min_score: float = 0.4) -> bool:
         return self.tradeability_score >= min_score

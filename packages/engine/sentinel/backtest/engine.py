@@ -8,6 +8,7 @@ Design: conservative and realistic
 - Applies the real risk checks (drawdown, concentration, etc.)
 - Tracks all trades with full details for audit
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -30,8 +31,8 @@ class BacktestConfig:
     start_date: date
     end_date: date
     initial_capital: Decimal = field(default_factory=lambda: Decimal("100000"))
-    risk_per_trade_pct: float = 0.01        # 1% per trade
-    max_concurrent_positions: int = 1       # single-symbol test = 1
+    risk_per_trade_pct: float = 0.01  # 1% per trade
+    max_concurrent_positions: int = 1  # single-symbol test = 1
     slippage_bps: int = 5
     commission_per_share: Decimal = field(default_factory=lambda: Decimal("0.005"))
     max_daily_drawdown_pct: float = 0.02
@@ -50,7 +51,7 @@ class BacktestTrade:
     realized_pnl: Decimal
     pnl_pct: float
     hold_bars: int
-    exit_reason: str   # "target", "stop", "time_stop", "end_of_data"
+    exit_reason: str  # "target", "stop", "time_stop", "end_of_data"
     regime_at_entry: str
     signal_confidence: float
     r_multiple: float  # pnl / initial_risk
@@ -154,29 +155,31 @@ class BacktestEngine:
                     entry_notional = entry_price * open_position["shares"]
                     pnl_pct = float(pnl / entry_notional) if entry_notional != 0 else 0.0
 
-                    trades.append(BacktestTrade(
-                        symbol=config.symbol,
-                        strategy=self.strategy.name,
-                        entry_date=open_position["entry_date"],
-                        exit_date=bar_date,
-                        side=open_position["side"],
-                        entry_price=open_position["entry_price"],
-                        exit_price=closed["exit_price"],
-                        shares=open_position["shares"],
-                        realized_pnl=pnl,
-                        pnl_pct=pnl_pct,
-                        hold_bars=i - open_position["bar_index"],
-                        exit_reason=closed["exit_reason"],
-                        regime_at_entry=open_position["regime_at_entry"],
-                        signal_confidence=open_position["signal_confidence"],
-                        r_multiple=r_multiple,
-                    ))
+                    trades.append(
+                        BacktestTrade(
+                            symbol=config.symbol,
+                            strategy=self.strategy.name,
+                            entry_date=open_position["entry_date"],
+                            exit_date=bar_date,
+                            side=open_position["side"],
+                            entry_price=open_position["entry_price"],
+                            exit_price=closed["exit_price"],
+                            shares=open_position["shares"],
+                            realized_pnl=pnl,
+                            pnl_pct=pnl_pct,
+                            hold_bars=i - open_position["bar_index"],
+                            exit_reason=closed["exit_reason"],
+                            regime_at_entry=open_position["regime_at_entry"],
+                            signal_confidence=open_position["signal_confidence"],
+                            r_multiple=r_multiple,
+                        )
+                    )
                     open_position = None
                     day_start_equity = equity  # reset after trade close
 
             # --- Step 3: Generate signal if no open position ---
             if open_position is None and pending_entry is None and i >= min_bars:
-                bar_window = bars[max(0, i - 500):i + 1]  # last 500 bars for context
+                bar_window = bars[max(0, i - 500) : i + 1]  # last 500 bars for context
                 regime = self.regime_classifier.classify(bar_window, config.symbol)
                 result = self.strategy.evaluate(config.symbol, bar_window, regime)
 
@@ -199,7 +202,9 @@ class BacktestEngine:
                             "stop_price": sig.stop_price,
                             "target_price": sig.target_price,
                             "shares": shares,
-                            "regime_at_entry": regime.label.value if hasattr(regime.label, "value") else str(regime.label),
+                            "regime_at_entry": regime.label.value
+                            if hasattr(regime.label, "value")
+                            else str(regime.label),
                             "signal_confidence": sig.confidence,
                             "max_hold_bars": sig.max_hold_bars,
                             "initial_risk": Decimal(str(risk_per_share)) * shares,
@@ -237,23 +242,25 @@ class BacktestEngine:
             entry_notional = open_position["entry_price"] * open_position["shares"]
             pnl_pct = float(pnl / entry_notional) if entry_notional != 0 else 0.0
 
-            trades.append(BacktestTrade(
-                symbol=config.symbol,
-                strategy=self.strategy.name,
-                entry_date=open_position["entry_date"],
-                exit_date=last_date,
-                side=open_position["side"],
-                entry_price=open_position["entry_price"],
-                exit_price=exit_price,
-                shares=open_position["shares"],
-                realized_pnl=pnl,
-                pnl_pct=pnl_pct,
-                hold_bars=len(bars) - 1 - open_position["bar_index"],
-                exit_reason="end_of_data",
-                regime_at_entry=open_position["regime_at_entry"],
-                signal_confidence=open_position["signal_confidence"],
-                r_multiple=r_multiple,
-            ))
+            trades.append(
+                BacktestTrade(
+                    symbol=config.symbol,
+                    strategy=self.strategy.name,
+                    entry_date=open_position["entry_date"],
+                    exit_date=last_date,
+                    side=open_position["side"],
+                    entry_price=open_position["entry_price"],
+                    exit_price=exit_price,
+                    shares=open_position["shares"],
+                    realized_pnl=pnl,
+                    pnl_pct=pnl_pct,
+                    hold_bars=len(bars) - 1 - open_position["bar_index"],
+                    exit_reason="end_of_data",
+                    regime_at_entry=open_position["regime_at_entry"],
+                    signal_confidence=open_position["signal_confidence"],
+                    r_multiple=r_multiple,
+                )
+            )
             if equity_curve:
                 equity_curve[-1] = (equity_curve[-1][0], equity)
 

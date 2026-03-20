@@ -1,4 +1,5 @@
 """Loads historical bars for backtesting, with local file cache."""
+
 from __future__ import annotations
 
 import json
@@ -88,17 +89,19 @@ class HistoricalDataLoader:
             data = json.loads(path.read_text())
             bars = []
             for item in data:
-                bars.append(Bar(
-                    symbol=item["symbol"],
-                    timestamp=datetime.fromisoformat(item["timestamp"]),
-                    open=Decimal(item["open"]),
-                    high=Decimal(item["high"]),
-                    low=Decimal(item["low"]),
-                    close=Decimal(item["close"]),
-                    volume=int(item["volume"]),
-                    vwap=Decimal(item["vwap"]) if item.get("vwap") else None,
-                    trade_count=item.get("trade_count"),
-                ))
+                bars.append(
+                    Bar(
+                        symbol=item["symbol"],
+                        timestamp=datetime.fromisoformat(item["timestamp"]),
+                        open=Decimal(item["open"]),
+                        high=Decimal(item["high"]),
+                        low=Decimal(item["low"]),
+                        close=Decimal(item["close"]),
+                        volume=int(item["volume"]),
+                        vwap=Decimal(item["vwap"]) if item.get("vwap") else None,
+                        trade_count=item.get("trade_count"),
+                    )
+                )
             return sorted(bars, key=lambda b: b.timestamp)
         except (OSError, json.JSONDecodeError, KeyError, ValueError):
             return None

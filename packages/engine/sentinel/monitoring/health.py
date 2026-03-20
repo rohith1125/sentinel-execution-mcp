@@ -2,6 +2,7 @@
 Extended health monitoring beyond simple DB/Redis ping.
 Tracks system-level metrics for operational visibility.
 """
+
 from __future__ import annotations
 
 import time
@@ -17,14 +18,14 @@ logger = structlog.get_logger(__name__)
 @dataclass
 class CheckResult:
     name: str
-    status: str   # "ok" | "warn" | "fail"
+    status: str  # "ok" | "warn" | "fail"
     latency_ms: float
     message: str
 
 
 @dataclass
 class SystemHealth:
-    status: str           # "healthy" | "degraded" | "unhealthy"
+    status: str  # "healthy" | "degraded" | "unhealthy"
     checks: dict[str, CheckResult]
     uptime_seconds: float
     last_trade_at: datetime | None
@@ -96,9 +97,13 @@ class HealthMonitor:
             overall_status = "healthy"
 
         # Operational metrics
-        open_positions, pending_orders, last_trade_at, daily_pnl, kill_switch_active = (
-            await self._fetch_operational_metrics()
-        )
+        (
+            open_positions,
+            pending_orders,
+            last_trade_at,
+            daily_pnl,
+            kill_switch_active,
+        ) = await self._fetch_operational_metrics()
 
         # Warn on pending order count
         if pending_orders > self._PENDING_ORDER_WARN_THRESHOLD:
@@ -135,6 +140,7 @@ class HealthMonitor:
         start = time.perf_counter()
         try:
             from sqlalchemy import text
+
             await self._db.execute(text("SELECT 1"))
             latency_ms = (time.perf_counter() - start) * 1000
             status = "ok" if latency_ms < 200 else "warn"
@@ -194,6 +200,7 @@ class HealthMonitor:
         start = time.perf_counter()
         try:
             import httpx
+
             async with httpx.AsyncClient(timeout=3.0) as client:
                 resp = await client.get(f"{base_url}/v2/clock")
             latency_ms = (time.perf_counter() - start) * 1000
@@ -276,9 +283,7 @@ class HealthMonitor:
         try:
             from sqlalchemy import text
 
-            result = await self._db.execute(
-                text("SELECT COUNT(*) FROM positions WHERE status = 'open'")
-            )
+            result = await self._db.execute(text("SELECT COUNT(*) FROM positions WHERE status = 'open'"))
             row = result.scalar()
             open_positions = int(row or 0)
         except Exception as exc:
@@ -286,6 +291,7 @@ class HealthMonitor:
 
         try:
             from sqlalchemy import text
+
             result = await self._db.execute(
                 text("SELECT COUNT(*) FROM orders WHERE status IN ('pending', 'submitted', 'partial')")
             )
@@ -296,6 +302,7 @@ class HealthMonitor:
 
         try:
             from sqlalchemy import text
+
             result = await self._db.execute(
                 text("SELECT filled_at FROM orders WHERE status = 'filled' ORDER BY filled_at DESC LIMIT 1")
             )
@@ -307,11 +314,9 @@ class HealthMonitor:
 
         try:
             from sqlalchemy import text
+
             result = await self._db.execute(
-                text(
-                    "SELECT COALESCE(SUM(realized_pnl), 0) FROM positions "
-                    "WHERE DATE(closed_at) = CURRENT_DATE"
-                )
+                text("SELECT COALESCE(SUM(realized_pnl), 0) FROM positions WHERE DATE(closed_at) = CURRENT_DATE")
             )
             row = result.scalar()
             daily_pnl = float(row or 0.0)
@@ -320,9 +325,8 @@ class HealthMonitor:
 
         try:
             from sqlalchemy import text
-            result = await self._db.execute(
-                text("SELECT is_active FROM kill_switch ORDER BY id DESC LIMIT 1")
-            )
+
+            result = await self._db.execute(text("SELECT is_active FROM kill_switch ORDER BY id DESC LIMIT 1"))
             row = result.fetchone()
             if row:
                 kill_switch_active = bool(row[0])

@@ -78,10 +78,7 @@ class WatchlistScanner:
                     error=str(exc),
                 )
 
-        tasks = [
-            self._scan_with_semaphore(symbol, strategy_names, regime_override, context_bars)
-            for symbol in symbols
-        ]
+        tasks = [self._scan_with_semaphore(symbol, strategy_names, regime_override, context_bars) for symbol in symbols]
         nested_results = await asyncio.gather(*tasks, return_exceptions=True)
 
         all_results: list[StrategyResult] = []
@@ -164,10 +161,7 @@ class WatchlistScanner:
 
         # Run strategies
         if strategy_names is not None:
-            strategies = [
-                s for name in strategy_names
-                if (s := self._registry.get(name)) is not None
-            ]
+            strategies = [s for name in strategy_names if (s := self._registry.get(name)) is not None]
             results = []
             for strategy in strategies:
                 try:

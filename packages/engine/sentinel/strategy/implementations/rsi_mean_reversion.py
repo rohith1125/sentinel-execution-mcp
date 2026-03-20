@@ -23,9 +23,9 @@ from sentinel.strategy.registry import registry
 
 _RSI_OVERSOLD = 30.0
 _RSI_RECOVERY = 35.0
-_ADX_MAX = 20.0                 # No strong trend allowed
-_VWAP_DEVIATION_MAX = 2.0       # price within 2% of VWAP
-_MIN_AVG_VOLUME = 1_000_000     # bars must average >= 1M shares
+_ADX_MAX = 20.0  # No strong trend allowed
+_VWAP_DEVIATION_MAX = 2.0  # price within 2% of VWAP
+_MIN_AVG_VOLUME = 1_000_000  # bars must average >= 1M shares
 _RR_MIN = 2.0
 
 
@@ -61,13 +61,19 @@ class RSIMeanReversionStrategy(StrategyBase):
         compatible, compat_score = self.is_regime_compatible(regime)
         if not compatible:
             return self._no_signal(
-                self.name, symbol, bars, compat_score,
+                self.name,
+                symbol,
+                bars,
+                compat_score,
                 f"Regime {regime.label.value} incompatible.",
             )
 
         if len(bars) < self.min_bars_required:
             return self._no_signal(
-                self.name, symbol, bars, compat_score,
+                self.name,
+                symbol,
+                bars,
+                compat_score,
                 f"Insufficient bars: need {self.min_bars_required}, have {len(bars)}.",
             )
 
@@ -79,7 +85,10 @@ class RSIMeanReversionStrategy(StrategyBase):
         avg_volume = float(volume.mean())
         if avg_volume < _MIN_AVG_VOLUME:
             return self._no_signal(
-                self.name, symbol, bars, compat_score,
+                self.name,
+                symbol,
+                bars,
+                compat_score,
                 f"Insufficient average volume: {avg_volume:,.0f} < {_MIN_AVG_VOLUME:,}.",
             )
 
@@ -101,40 +110,55 @@ class RSIMeanReversionStrategy(StrategyBase):
         recent_rsi_min = float(rsi_series.iloc[-10:].min())
         if recent_rsi_min > _RSI_OVERSOLD:
             return self._no_signal(
-                self.name, symbol, bars, compat_score,
+                self.name,
+                symbol,
+                bars,
+                compat_score,
                 f"No oversold dip: min RSI in last 10 bars = {recent_rsi_min:.1f} (need < {_RSI_OVERSOLD}).",
             )
 
         # Current RSI must have recovered above 35
         if latest_rsi <= _RSI_RECOVERY:
             return self._no_signal(
-                self.name, symbol, bars, compat_score,
+                self.name,
+                symbol,
+                bars,
+                compat_score,
                 f"RSI={latest_rsi:.1f} has not recovered above {_RSI_RECOVERY} yet.",
             )
 
         # Confirm upward RSI direction
         if latest_rsi <= prior_rsi:
             return self._no_signal(
-                self.name, symbol, bars, compat_score,
+                self.name,
+                symbol,
+                bars,
+                compat_score,
                 f"RSI not rising: current={latest_rsi:.1f}, prior={prior_rsi:.1f}.",
             )
 
         # Price near VWAP
         if abs(vwap_dev_val) > _VWAP_DEVIATION_MAX:
             return self._no_signal(
-                self.name, symbol, bars, compat_score,
+                self.name,
+                symbol,
+                bars,
+                compat_score,
                 f"Price too far from VWAP: deviation={vwap_dev_val:.2f}% (max ±{_VWAP_DEVIATION_MAX}%).",
             )
 
         # No strong downtrend
         if adx_val > _ADX_MAX:
             return self._no_signal(
-                self.name, symbol, bars, compat_score,
+                self.name,
+                symbol,
+                bars,
+                compat_score,
                 f"ADX={adx_val:.1f} exceeds {_ADX_MAX} — possible downtrend.",
             )
 
         # Find the RSI swing low for stop placement
-        _rsi_low_idx = int(rsi_series.iloc[-10:].idxmin()) if hasattr(rsi_series.iloc[-10:], 'idxmin') else -5
+        _rsi_low_idx = int(rsi_series.iloc[-10:].idxmin()) if hasattr(rsi_series.iloc[-10:], "idxmin") else -5
         try:
             swing_low_price = float(low.iloc[-10:].min())
         except Exception:

@@ -1,4 +1,5 @@
 """FastAPI endpoints for monitoring: health, reconciliation, alerts, metrics."""
+
 from __future__ import annotations
 
 from datetime import UTC, datetime
@@ -20,6 +21,7 @@ def _get_redis(request: Request) -> Any:
 # ---------------------------------------------------------------------------
 # GET /monitoring/health/full
 # ---------------------------------------------------------------------------
+
 
 @router.get("/health/full")
 async def full_health(request: Request) -> JSONResponse:
@@ -50,6 +52,7 @@ async def full_health(request: Request) -> JSONResponse:
 # GET /monitoring/reconciliation/latest
 # ---------------------------------------------------------------------------
 
+
 @router.get("/reconciliation/latest")
 async def reconciliation_latest(request: Request) -> JSONResponse:
     """Return the last reconciliation result from cache."""
@@ -72,6 +75,7 @@ async def reconciliation_latest(request: Request) -> JSONResponse:
 # POST /monitoring/reconciliation/run
 # ---------------------------------------------------------------------------
 
+
 @router.post("/reconciliation/run")
 async def reconciliation_run(request: Request) -> JSONResponse:
     """Trigger an immediate reconciliation pass."""
@@ -91,6 +95,7 @@ async def reconciliation_run(request: Request) -> JSONResponse:
 # ---------------------------------------------------------------------------
 # GET /monitoring/alerts/recent
 # ---------------------------------------------------------------------------
+
 
 @router.get("/alerts/recent")
 async def alerts_recent(request: Request, limit: int = 20) -> JSONResponse:
@@ -125,6 +130,7 @@ async def alerts_recent(request: Request, limit: int = 20) -> JSONResponse:
 # GET /monitoring/metrics
 # ---------------------------------------------------------------------------
 
+
 @router.get("/metrics")
 async def metrics(request: Request) -> dict[str, Any]:
     """Simple metrics dict for dashboards."""
@@ -147,10 +153,7 @@ async def metrics(request: Request) -> dict[str, Any]:
         "daily_pnl": health.daily_pnl,
         "kill_switch_active": health.kill_switch_active,
         "uptime_seconds": round(health.uptime_seconds, 1),
-        "checks": {
-            name: {"status": c.status, "latency_ms": c.latency_ms}
-            for name, c in health.checks.items()
-        },
+        "checks": {name: {"status": c.status, "latency_ms": c.latency_ms} for name, c in health.checks.items()},
         "ts": datetime.now(tz=UTC).isoformat(),
     }
 
@@ -158,6 +161,7 @@ async def metrics(request: Request) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 # Serialisation helpers
 # ---------------------------------------------------------------------------
+
 
 def _serialize_health(health: Any) -> dict[str, Any]:
     return {

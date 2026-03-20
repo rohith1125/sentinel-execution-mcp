@@ -38,6 +38,7 @@ class ScanSymbolRequest(BaseModel):
 
 def _result_to_dict(r: object) -> dict:
     from sentinel.strategy.base import StrategyResult as SR
+
     res: SR = r  # type: ignore[assignment]
     return {
         "symbol": res.symbol,
