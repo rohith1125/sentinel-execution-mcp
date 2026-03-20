@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import os
 from logging.config import fileConfig
 
 from alembic import context
@@ -15,6 +16,13 @@ from sentinel.db.base import Base
 
 config = context.config
 fileConfig(config.config_file_name)  # type: ignore[arg-type]
+
+# Allow DATABASE_URL env var to override whatever is in alembic.ini so that
+# CI (and any other environment) can point Alembic at the correct database
+# without modifying the checked-in alembic.ini file.
+_db_url = os.environ.get("DATABASE_URL")
+if _db_url:
+    config.set_main_option("sqlalchemy.url", _db_url)
 
 target_metadata = Base.metadata
 

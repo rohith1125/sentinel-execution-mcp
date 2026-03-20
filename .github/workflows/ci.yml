@@ -71,9 +71,11 @@ jobs:
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4
+        continue-on-error: true
         with:
           file: packages/engine/coverage.xml
           flags: engine
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   mcp-checks:
     name: TypeScript MCP
