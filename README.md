@@ -1,244 +1,315 @@
 # Sentinel Execution MCP
 
-**A production-grade trading control plane exposed as an MCP server.**
-
-[![CI](https://github.com/your-org/sentinel-execution-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/your-org/sentinel-execution-mcp/actions/workflows/ci.yml)
+![CI](https://github.com/rohith1125/sentinel-execution-mcp/actions/workflows/ci.yml/badge.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
----
-
-## What This Is
-
-Sentinel is a trading control plane designed to be operated by an AI agent via the Model Context Protocol. It handles the machinery of trading — market data, regime classification, risk checks, order management, and audit logging — and exposes everything as typed MCP tools that an agent can call.
-
-The system is built around one core idea: **the engine decides, the agent directs**. The agent calls tools to express intent (`strategy.scan_watchlist`, `execution.paper_order`). The engine enforces constraints (`check_kill_switch`, `check_daily_drawdown`, `check_liquidity_threshold`). Neither side can bypass the other.
-
-This is not a signals library or a backtesting framework. It's the operational layer that sits between a strategy signal and a live broker: risk firewall, position management, governance workflows, and a complete audit trail.
-
-The default configuration runs entirely in paper trading mode with mock market data. You can evaluate the full system without any broker account or API keys.
+**A production-grade algorithmic trading control plane exposed as an MCP server — so Claude can manage watchlists, classify market regimes, validate risk, and submit paper orders through natural language.**
 
 ---
 
-## Key Capabilities
+## What It Is
 
-- **Risk-first architecture**: 13+ risk check functions, all pure and independently testable. Hard blocks cannot be bypassed. Kill switch with global, per-strategy, and per-symbol granularity.
-- **Regime classification**: Technical indicator suite (ATR, ADX, RSI, Bollinger Width, Hurst Exponent, VWAP, Price Efficiency) classifies market conditions before strategy signals are evaluated.
-- **Strategy governance**: Draft → Research → Backtest → Paper → Live promotion lifecycle with configurable criteria. Paper-to-live transition requires explicit human sign-off.
-- **Full audit trail**: Every trade decision — approved or rejected — is written to an append-only audit journal with full explanation of which checks passed and which blocked.
-- **Paper trading simulation**: Deterministic fill simulation with configurable latency and slippage. Full order lifecycle: pending → submitted → filled/cancelled/rejected.
-- **MCP tool coverage**: 40+ tools across watchlist, market, regime, strategy, risk, portfolio, execution, governance, and audit categories.
-- **Dual transport**: stdio (for direct Claude integration) and SSE (for HTTP-based agent frameworks).
+Sentinel is a two-package monorepo:
+
+| Package | Language | Role |
+|---|---|---|
+| `packages/engine` | Python 3.12 / FastAPI | All trading logic: risk checks, regime classification, order lifecycle, audit journal, strategy governance |
+| `packages/mcp` | TypeScript / Node 20 | Thin MCP server that routes 40+ tools to the engine via HTTP. Zero trading logic lives here. |
+
+Claude (or any MCP-compatible agent) talks to the MCP server. The MCP server talks to the engine. The engine owns the database and cache.
 
 ---
 
 ## Architecture
 
 ```
-AI Agent (Claude, etc.)
-        │ MCP (stdio / SSE)
-        ▼
-MCP Server (TypeScript)        ← Zod validation, tool routing, formatting
-        │ HTTP REST
-        ▼
-Engine Service (Python)        ← All trading logic, state management
-        │                 │
-  PostgreSQL            Redis
-  (orders, positions,   (kill switch, cache)
-   strategies, audit)
+  Claude Desktop (or any MCP agent)
+           │
+           │  MCP protocol (stdio or SSE)
+           ▼
+  ┌─────────────────────────┐
+  │   MCP Server            │  TypeScript · Zod validation · tool routing
+  │   (packages/mcp)        │
+  └────────────┬────────────┘
+               │  HTTP REST (localhost:8100)
+               ▼
+  ┌─────────────────────────┐
+  │   Engine API            │  Python · FastAPI · all trading logic
+  │   (packages/engine)     │
+  └──────────┬──────────────┘
+             │
+     ┌───────┴────────┐
+     ▼                ▼
+ PostgreSQL          Redis
+ (orders,           (kill switch,
+  positions,         rate limits,
+  strategies,        cache)
+  audit log)
 ```
 
-The MCP server is a thin routing layer. Zero trading logic lives there. If the engine is unavailable, every tool call returns an error immediately.
+If the engine is unavailable, every MCP tool call returns an error immediately. There is no fallback or partial execution.
+
+---
+
+## Prerequisites
+
+| Dependency | Minimum version | Notes |
+|---|---|---|
+| Python | 3.12 | Engine runtime |
+| Node.js | 20 | MCP server runtime |
+| pnpm | latest | MCP package manager (`npm i -g pnpm`) |
+| PostgreSQL | 15+ | Primary data store |
+| Redis | 7+ | Kill switch and cache |
+
+For local development, Docker is the easiest way to run Postgres and Redis:
+
+```bash
+docker compose -f docker/docker-compose.yml up -d db redis
+```
 
 ---
 
 ## Quick Start
 
-### Prerequisites
-
-- Python 3.12+, Node.js 20+, pnpm 9+
-- Docker and Docker Compose
-
-### Setup
+### 1. Clone and configure
 
 ```bash
-# 1. Clone and configure
-git clone <repo>
+git clone https://github.com/rohith1125/sentinel-execution-mcp.git
 cd sentinel-execution-mcp
 cp .env.example .env
-# Defaults work for local development — no changes needed
-
-# 2. Start PostgreSQL and Redis
-docker-compose -f docker/docker-compose.yml up -d db redis
-
-# 3. Install dependencies
-make install
-
-# 4. Run migrations
-make migrate
-
-# 5. Start the engine (in one terminal)
-cd packages/engine
-uvicorn sentinel.api:app --reload --port 8100
-
-# 6. Start the MCP server (in another terminal)
-cd packages/mcp
-pnpm dev
+# Default values work for local paper-trading development — no edits required
 ```
 
-Verify the engine is running:
+### 2. Set up the engine
+
+```bash
+cd packages/engine
+python -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+pip install -e ".[dev]"
+```
+
+### 3. Run database migrations
+
+```bash
+# From packages/engine with the venv active
+alembic upgrade head
+```
+
+### 4. Start the engine
+
+```bash
+uvicorn sentinel.api:app --reload --port 8100
+```
+
+Verify it is running:
+
 ```bash
 curl http://localhost:8100/health
-# → {"status": "ok", "env": "development"}
+# {"status": "ok", "env": "development"}
+```
+
+### 5. Build and start the MCP server
+
+Open a second terminal:
+
+```bash
+cd packages/mcp
+pnpm install
+pnpm build
+pnpm dev        # stdio transport — for direct Claude Desktop integration
 ```
 
 ---
 
-## Paper Trading Walkthrough
+## Connect Claude Desktop
 
-This walkthrough uses the default mock market data provider — no broker account needed.
+Add the following to your Claude Desktop configuration file.
 
-### 1. Populate the watchlist
+**macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+**Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
 
-```
-watchlist.add(symbols=["AAPL", "MSFT", "NVDA"], group="tech")
-```
-
-### 2. Check market regime
-
-```
-regime.evaluate(symbol="SPY")
-# → label: "trending_bull", tradeability_score: 0.80
-```
-
-### 3. Scan for signals
-
-```
-strategy.scan_watchlist(group="tech", strategies=["momentum_breakout"])
-```
-
-### 4. Validate a trade before submitting
-
-```
-risk.validate_trade(symbol="NVDA", side="buy", quantity=10, order_type="market")
-# → passed: true, blocking_checks: [], warning_checks: []
+```json
+{
+  "mcpServers": {
+    "sentinel": {
+      "command": "node",
+      "args": ["/absolute/path/to/sentinel-execution-mcp/packages/mcp/dist/index.js"],
+      "env": {
+        "ENGINE_BASE_URL": "http://localhost:8100",
+        "APP_ENV": "paper"
+      }
+    }
+  }
+}
 ```
 
-### 5. Submit a paper order
+Replace `/absolute/path/to/sentinel-execution-mcp` with the actual path on your machine. Restart Claude Desktop after saving.
 
-```
-execution.paper_order(symbol="NVDA", side="buy", order_type="market", quantity=10)
-# → order_id: "ord-...", status: "filled", filled_avg_price: 876.25
-```
+---
 
-### 6. Review the portfolio
+## MCP Tools Reference
 
-```
-portfolio.status()
-# → cash, positions, unrealized_pnl, gross_exposure
-```
+Sentinel exposes **40+ tools** across nine categories. The MCP server name is `sentinel`.
 
-### 7. Audit the decision
+| Category | Tool | Description |
+|---|---|---|
+| **Watchlist** | `watchlist.add` | Add symbols to the trading watchlist, optionally assigned to a group |
+| | `watchlist.remove` | Remove symbols; they will no longer appear in strategy scans |
+| | `watchlist.list` | List active symbols, optionally filtered by group |
+| | `watchlist.get` | Get details for a single symbol |
+| | `watchlist.groups` | List all named watchlist groups |
+| | `watchlist.update` | Update notes or group assignment for a symbol |
+| **Market Data** | `market.snapshot` | Latest quote and trade data for one or more symbols |
+| | `market.bars` | OHLCV bar history with configurable timeframe |
+| | `market.quote` | Real-time bid/ask spread for a symbol |
+| | `market.health` | Check market data provider connectivity |
+| **Regime** | `regime.evaluate` | Classify current market regime using ATR, ADX, RSI, Bollinger Width, Hurst Exponent, VWAP, and Price Efficiency |
+| | `regime.history` | Retrieve historical regime snapshots for a symbol |
+| **Strategy** | `strategy.scan` | Scan the watchlist for signals across one or more strategies |
+| | `strategy.signal` | Evaluate a single symbol against a specific strategy |
+| | `strategy.list` | List all registered strategies and their current state |
+| **Risk / Kill Switch** | `risk.validate_trade` | Run all 13+ risk checks against a proposed trade before submission |
+| | `risk.kill_switch_status` | Get the current state of all kill switches |
+| | `risk.kill_switch_enable` | Enable a kill switch globally, per-strategy, or per-symbol |
+| | `risk.kill_switch_disable` | Disable a kill switch (requires explicit reason) |
+| | `risk.exposure` | Current gross and net exposure summary |
+| | `risk.drawdown` | Current daily drawdown against configured limits |
+| **Portfolio** | `portfolio.status` | Full account overview: value, cash, equity, P&L, buying power |
+| | `portfolio.positions` | All open positions with unrealized P&L |
+| | `portfolio.history` | Closed position history with realized P&L |
+| **Execution** | `execution.paper_order` | Submit a paper trading order (market, limit, stop, stop-limit) |
+| | `execution.cancel_order` | Cancel a pending or partially filled order by ID |
+| | `execution.get_order` | Get the current state of a specific order |
+| | `execution.list_orders` | List orders filtered by status, symbol, or date range |
+| | `execution.reconcile` | Trigger a manual reconciliation between engine state and broker |
+| **Governance** | `governance.create_strategy` | Register a new strategy in `draft` state |
+| | `governance.promote_strategy` | Advance a strategy: Draft → Research → Backtest → Paper → Live |
+| | `governance.suspend_strategy` | Suspend a live or paper strategy immediately |
+| | `governance.list_strategies` | List all strategies with their current lifecycle state |
+| | `governance.evaluate_promotion` | Check whether a strategy meets criteria for promotion |
+| **Audit** | `audit.explain_trade` | Full human-readable explanation for a trade decision by audit event ID |
+| | `audit.recent_events` | Most recent audit events, filterable by symbol or strategy |
+| | `audit.trade_history` | Completed trade history with outcomes |
+| | `audit.decision_log` | Raw decision log entries for a time window |
+| | `audit.stats` | Aggregate statistics: win rate, average P&L, Sharpe proxy |
+| | `audit.export` | Export audit records as CSV for a date range |
 
-```
-audit.recent_events(symbol="NVDA", limit=1)
-# → copy the audit_event_id
-
-audit.explain_trade(audit_event_id="evt-...")
-# → Full explanation of every risk check that ran
-```
+Full tool documentation with parameter schemas: [docs/mcp-tools.md](docs/mcp-tools.md)
 
 ---
 
 ## Environment Variables
 
+### Engine (`packages/engine/.env`)
+
 | Variable | Default | Description |
 |---|---|---|
 | `APP_ENV` | `paper` | `development`, `paper`, or `live` |
-| `MARKET_DATA_PROVIDER` | `mock` | `mock` or `alpaca` |
-| `DATABASE_URL` | `postgresql+asyncpg://...` | PostgreSQL connection |
-| `REDIS_URL` | `redis://localhost:6379/0` | Redis connection |
-| `ALPACA_API_KEY` | `` | Required when provider=alpaca |
-| `ALPACA_BASE_URL` | `https://paper-api.alpaca.markets` | Alpaca endpoint |
-| `MAX_POSITION_PCT` | `0.05` | Max position size (5% of account) |
-| `MAX_DAILY_DRAWDOWN_PCT` | `0.02` | Daily loss limit (2%) |
-| `MAX_CONCURRENT_POSITIONS` | `10` | Position count limit |
-| `ENGINE_BASE_URL` | `http://localhost:8100` | Engine URL (from MCP server) |
+| `DATABASE_URL` | `postgresql+asyncpg://sentinel:sentinel@localhost:5432/sentinel` | PostgreSQL connection string |
+| `REDIS_URL` | `redis://localhost:6379/0` | Redis connection string |
+| `MARKET_DATA_PROVIDER` | `mock` | `mock` (no credentials needed) or `alpaca` |
+| `ALPACA_API_KEY` | _(empty)_ | Required when `MARKET_DATA_PROVIDER=alpaca` |
+| `ALPACA_API_SECRET` | _(empty)_ | Required when `MARKET_DATA_PROVIDER=alpaca` |
+| `ALPACA_BASE_URL` | `https://paper-api.alpaca.markets` | Use `https://api.alpaca.markets` for live trading |
+| `MAX_POSITION_PCT` | `0.05` | Maximum position size as a fraction of account equity (5%) |
+| `MAX_DAILY_DRAWDOWN_PCT` | `0.02` | Hard daily loss limit (2%); trading halts if breached |
+| `MAX_GROSS_EXPOSURE_PCT` | `0.80` | Maximum gross exposure across all positions (80%) |
+| `MAX_CONCURRENT_POSITIONS` | `10` | Maximum number of simultaneously open positions |
+| `MAX_TRADE_RISK_PCT` | `0.01` | Maximum risk per individual trade (1%) |
+| `PAPER_FILL_LATENCY_MS` | `50` | Simulated fill latency in paper trading mode |
+| `SLIPPAGE_BPS` | `5` | Simulated slippage in basis points |
+| `SENTINEL_AUTH_ENABLED` | `true` | Set to `false` for local development only |
+| `SENTINEL_MASTER_KEY` | _(empty)_ | Generate with `python -m sentinel.auth.cli generate --name master --scopes admin` |
+| `SENTINEL_API_KEYS_JSON` | _(empty)_ | JSON array of additional client key records |
 
-See `.env.example` for the complete list.
+### MCP Server (`packages/mcp/.env`)
 
----
-
-## MCP Tool Categories
-
-| Category | Tools | Purpose |
+| Variable | Default | Description |
 |---|---|---|
-| `watchlist.*` | 6 tools | Symbol management and organization |
-| `market.*` | 4 tools | Price data, quotes, health check |
-| `regime.*` | 2 tools | Market regime classification |
-| `strategy.*` | 3 tools | Signal scanning across strategies |
-| `risk.*` | 6 tools | Risk validation and kill switches |
-| `portfolio.*` | 3 tools | Positions and account state |
-| `execution.*` | 5 tools | Order submission and management |
-| `governance.*` | 5 tools | Strategy promotion lifecycle |
-| `audit.*` | 6 tools | Trade history and explanations |
+| `ENGINE_BASE_URL` | `http://localhost:8100` | Base URL of the running engine service |
 
-Full tool reference: [docs/mcp-tools.md](docs/mcp-tools.md)
+See `.env.example` at the repo root for the complete annotated reference.
 
 ---
 
-## Testing
+## Example Workflow (Paper Trading)
 
-```bash
-# Run all tests (requires Docker for DB/Redis)
-make test
+```
+# 1. Add symbols
+watchlist.add(symbols=["NVDA", "MSFT", "AAPL"], group="tech")
 
-# Python unit tests only (no database required)
-cd packages/engine && pytest tests/unit/ -v
+# 2. Classify regime
+regime.evaluate(symbol="NVDA", timeframe="1Day")
 
-# Python integration tests (requires DB/Redis)
-cd packages/engine && pytest tests/integration/ -v
+# 3. Scan for signals
+strategy.scan(group="tech", strategy="momentum_v1")
 
-# TypeScript tests
-cd packages/mcp && pnpm test
+# 4. Validate before submitting
+risk.validate_trade(symbol="NVDA", side="buy", qty=10, order_type="market")
+
+# 5. Submit paper order
+execution.paper_order(symbol="NVDA", side="buy", qty=10, order_type="market")
+
+# 6. Review portfolio
+portfolio.status()
+
+# 7. Inspect the audit trail
+audit.recent_events(symbol="NVDA", limit=1)
+audit.explain_trade(audit_event_id="evt-...")
 ```
 
-Test coverage targets: engine >= 80%, MCP >= 70%.
+---
 
-See [docs/developer-guide.md](docs/developer-guide.md) for details on writing new tests.
+## Running Tests
+
+### Engine (Python)
+
+```bash
+cd packages/engine
+source .venv/bin/activate
+pytest tests/ -v
+```
+
+### MCP Server (TypeScript)
+
+```bash
+cd packages/mcp
+pnpm test
+```
+
+### Full CI (lint + type check + test)
+
+```bash
+# From repo root
+make check
+```
+
+---
+
+## Repository Structure
+
+```
+sentinel-execution-mcp/
+├── packages/
+│   ├── engine/          # Python FastAPI trading engine
+│   │   ├── sentinel/    # Application source
+│   │   ├── tests/       # Pytest test suite
+│   │   └── alembic/     # Database migrations
+│   └── mcp/             # TypeScript MCP server
+│       └── src/
+│           └── tools/   # One file per tool category
+├── docker/              # Dockerfiles and docker-compose
+├── docs/                # Architecture, tool reference, risk model
+├── scripts/             # Setup and reset helpers
+└── .env.example         # Annotated environment variable reference
+```
 
 ---
 
 ## Safety Disclaimer
 
-**This software can route real orders to a live brokerage account. Use it incorrectly, and you will lose real money.**
-
-Specific things that can go wrong:
-
-- Setting `APP_ENV=live` with a funded account and misconfigured risk limits can result in unexpected positions or losses before you notice.
-- The `execution.flatten_all` tool closes all open positions at market. In a fast-moving or illiquid market, market orders may fill significantly away from the last quoted price.
-- Paper trading results do not predict live trading results. Fill simulation is simplified. Real markets have queue position, partial fills, and impact.
-- The system does not have a circuit breaker against bugs in strategy code. If a strategy generates erroneous signals at high frequency, risk checks may not catch all of them before significant exposure accumulates.
-- Kill switch state persists in Redis. If Redis fails and you restart without restoring state, a previously-engaged global halt will be cleared.
-- This software is provided as-is with no warranty. The authors are not responsible for trading losses incurred through use of this system.
-
-Before using this with real money:
-1. Run exclusively in paper mode for at least 30 days.
-2. Review every risk parameter and understand why each limit exists.
-3. Test the kill switch in paper mode so you know it works when you need it.
-4. Have a manual process for closing positions that does not depend on this software.
-
----
-
-## Roadmap
-
-Honest assessment of what is missing for a complete production system:
-
-- **Live broker integration**: Alpaca adapter exists; needs thorough testing against live API behavior (partial fills, order amendments, stream reconnect).
-- **Position P&L streaming**: Current implementation polls. Real-time P&L via WebSocket would reduce latency.
-- **Multi-account support**: The current model assumes a single account. Multi-account allocation is not implemented.
-- **Strategy backtesting integration**: Backtest results must be imported externally. Native backtesting is out of scope but an import endpoint is planned.
-- **Alerting**: No built-in alerting when drawdown limits are approached or positions are stuck. Needs integration with a notification system.
-- **Web UI**: All interaction is via MCP tools or raw API. A monitoring dashboard would improve operational visibility.
+This software is for **paper trading and research only** unless you fully understand every component. Setting `APP_ENV=live` with real Alpaca credentials will place real orders with real money. The hard-coded risk limits are conservative defaults — verify they match your own risk tolerance before use. The authors accept no liability for financial losses.
 
 ---
 

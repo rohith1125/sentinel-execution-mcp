@@ -1,11 +1,39 @@
 {
-  "name": "@sentinel/mcp",
+  "name": "sentinel-execution-mcp",
   "version": "0.1.0",
   "description": "Sentinel Execution MCP — trading control plane MCP interface",
   "type": "module",
   "main": "dist/index.js",
+  "bin": {
+    "sentinel-mcp": "./dist/index.js"
+  },
+  "files": [
+    "dist/",
+    "README.md"
+  ],
+  "keywords": [
+    "mcp",
+    "trading",
+    "claude",
+    "ai",
+    "finance",
+    "modelcontextprotocol"
+  ],
+  "author": "rohith1125",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rohith1125/sentinel-execution-mcp.git"
+  },
+  "homepage": "https://github.com/rohith1125/sentinel-execution-mcp",
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && node -e \"const fs=require('fs');const f='dist/index.js';fs.writeFileSync(f,'#!/usr/bin/env node\\n'+fs.readFileSync(f,'utf8'))\"",
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",

@@ -1,0 +1,149 @@
+name: Sentinel Execution MCP
+description: >
+  Sentinel Execution MCP is a trading control-plane server that exposes a
+  structured set of tools for paper trading execution, portfolio monitoring,
+  risk management, market data access, strategy scanning, regime classification,
+  watchlist management, strategy governance, and full audit trail retrieval.
+  It acts as the AI-facing interface to a Sentinel trading engine backend,
+  enforcing risk guardrails and maintaining a complete, tamper-evident audit
+  log of every decision and action taken during a trading session.
+version: "0.1.0"
+license: MIT
+homepage: https://github.com/your-org/sentinel-execution-mcp
+repository: https://github.com/your-org/sentinel-execution-mcp
+categories:
+  - finance
+  - trading
+  - automation
+  - risk-management
+
+tools:
+  # Execution
+  - name: execution.paper_order
+    description: Submit a paper trading order (market, limit, stop, stop-limit) for simulated execution.
+  - name: execution.cancel_order
+    description: Cancel a pending or partially filled order by order ID with a required audit reason.
+  - name: execution.get_order
+    description: Retrieve the current status and fill details of an order by its ID.
+  - name: execution.flatten_all
+    description: Emergency action — submit market sell orders for all open positions simultaneously.
+  - name: execution.reset_paper_account
+    description: Reset the paper trading account to a clean state with a specified starting cash balance.
+
+  # Portfolio
+  - name: portfolio.status
+    description: Get a full portfolio overview including account value, cash, equity, P&L, and all open positions.
+  - name: portfolio.positions
+    description: List all open positions with entry price, current price, market value, and unrealized P&L.
+  - name: portfolio.account
+    description: Get lightweight account financial figures — value, cash, equity, and daily P&L.
+
+  # Risk
+  - name: risk.validate_trade
+    description: Run a proposed trade through the full risk firewall before submission.
+  - name: risk.kill_switch_status
+    description: Get the current state of all kill switches — global halt, halted strategies, and halted symbols.
+  - name: risk.engage_halt
+    description: Immediately engage a global trading halt, rejecting all new order submissions.
+  - name: risk.disengage_halt
+    description: Disengage the global trading halt and resume normal order submission.
+  - name: risk.halt_strategy
+    description: Halt a specific strategy without affecting others.
+  - name: risk.halt_symbol
+    description: Halt trading on a specific symbol across all strategies.
+
+  # Market Data
+  - name: market.snapshot
+    description: Get a real-time quote, latest bar, and daily summary for a single symbol.
+  - name: market.snapshots
+    description: Get real-time snapshots for up to 200 symbols in a single request.
+  - name: market.bars
+    description: Retrieve historical OHLCV bars for a symbol at a configurable timeframe.
+  - name: market.health
+    description: Check health and connectivity status of the market data provider.
+
+  # Strategy
+  - name: strategy.scan_watchlist
+    description: Run strategies across all watchlist symbols and return ranked signals by confidence.
+  - name: strategy.scan_symbol
+    description: Run strategies against a single symbol and return signals with confidence and price levels.
+  - name: strategy.list
+    description: List all available strategies and their current governance state.
+
+  # Regime
+  - name: regime.evaluate
+    description: Classify the current market regime for a symbol with confidence and tradeability scores.
+  - name: regime.evaluate_bulk
+    description: Classify market regimes for multiple symbols in a single call.
+
+  # Watchlist
+  - name: watchlist.add
+    description: Add one or more symbols to the trading watchlist, optionally assigned to a group.
+  - name: watchlist.remove
+    description: Remove one or more symbols from the watchlist.
+  - name: watchlist.list
+    description: List all watchlist symbols with optional group or active-status filtering.
+  - name: watchlist.groups
+    description: List all distinct group tags in use on the watchlist.
+  - name: watchlist.tag
+    description: Assign a group tag to one or more watchlist symbols.
+  - name: watchlist.export
+    description: Export the watchlist as a structured JSON document.
+
+  # Governance
+  - name: governance.evaluate_promotion
+    description: Evaluate whether a strategy meets criteria to be promoted to a higher governance state.
+  - name: governance.promote_strategy
+    description: Promote a strategy to a higher governance state after evaluation criteria are met.
+  - name: governance.suspend_strategy
+    description: Suspend a strategy, stopping it from generating signals or executing orders.
+  - name: governance.list_strategies
+    description: List all strategies with their governance state, promotion history, and lifecycle details.
+  - name: governance.check_drift
+    description: Analyze a strategy for performance drift relative to its historical baseline.
+
+  # Audit
+  - name: audit.explain_trade
+    description: Retrieve a full human-readable explanation of a trade decision by audit event ID.
+  - name: audit.recent_events
+    description: Retrieve the most recent audit events, optionally filtered by symbol or strategy.
+  - name: audit.daily_summary
+    description: Get a structured summary of all trading activity for a given date.
+  - name: audit.weekly_summary
+    description: Get a week-over-week trading summary with P&L, Sharpe, drawdown, and per-strategy breakdown.
+  - name: audit.strategy_scorecard
+    description: Generate a performance scorecard for a strategy over a configurable lookback window.
+  - name: audit.trade_blotter
+    description: Retrieve a chronological record of all trades within a date range.
+
+startCommand:
+  type: stdio
+  command: node
+  args:
+    - packages/mcp/dist/index.js
+  env:
+    ENGINE_BASE_URL:
+      description: >
+        Base URL of the Sentinel trading engine HTTP API.
+        Example: http://localhost:8100
+      required: true
+    ENGINE_TIMEOUT_MS:
+      description: >
+        HTTP request timeout in milliseconds for engine API calls.
+        Defaults to 10000 (10 seconds).
+      required: false
+    NODE_ENV:
+      description: >
+        Runtime environment. One of: development, paper, live, test.
+        Defaults to "paper".
+      required: false
+    LOG_LEVEL:
+      description: >
+        Logging verbosity. One of: trace, debug, info, warn, error.
+        Defaults to "info".
+      required: false
+    MCP_TRANSPORT:
+      description: >
+        Transport mode for the MCP server. One of: stdio, sse.
+        Defaults to "stdio". Smithery uses stdio.
+      required: false
