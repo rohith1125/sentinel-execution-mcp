@@ -51,25 +51,45 @@ If the engine is unavailable, every MCP tool call returns an error immediately. 
 
 ---
 
-## Prerequisites
+## Quick Start (Docker — recommended)
 
-| Dependency | Minimum version | Notes |
-|---|---|---|
-| Python | 3.12 | Engine runtime |
-| Node.js | 20 | MCP server runtime |
-| pnpm | latest | MCP package manager (`npm i -g pnpm`) |
-| PostgreSQL | 15+ | Primary data store |
-| Redis | 7+ | Kill switch and cache |
-
-For local development, Docker is the easiest way to run Postgres and Redis:
+The fastest way to get running. Requires [Docker](https://docs.docker.com/get-docker/) and [Node.js 20+](https://nodejs.org).
 
 ```bash
-docker compose -f docker/docker-compose.yml up -d db redis
+# 1. Clone and configure
+git clone https://github.com/rohith1125/sentinel-execution-mcp.git
+cd sentinel-execution-mcp
+cp .env.example .env          # defaults work out of the box — no edits needed
+
+# 2. Start Postgres + Redis + engine (runs migrations automatically)
+docker compose -f docker/docker-compose.yml up -d db redis engine
+
+# Wait ~10 seconds, then verify the engine is healthy:
+curl http://localhost:8100/health
+# {"status": "ok", "provider": "mock", ...}
+
+# 3. Build the MCP server (one-time)
+cd packages/mcp
+npm install
+npm run build
 ```
+
+Then add Sentinel to Claude Desktop (see [Connect Claude Desktop](#connect-claude-desktop) below) and restart Claude. That's it — all 40 tools are live.
 
 ---
 
-## Quick Start
+## Manual Setup (no Docker)
+
+Use this if you have Postgres and Redis already running locally.
+
+**Prerequisites:**
+
+| Dependency | Minimum version | Notes |
+|---|---|---|
+| Python | 3.12 | Engine runtime — check with `python3 --version` |
+| Node.js | 20 | MCP server runtime |
+| PostgreSQL | 15+ | Primary data store |
+| Redis | 7+ | Kill switch and cache |
 
 ### 1. Clone and configure
 
@@ -84,7 +104,7 @@ cp .env.example .env
 
 ```bash
 cd packages/engine
-python -m venv .venv
+python3.12 -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -e ".[dev]"
 ```
@@ -106,7 +126,7 @@ Verify it is running:
 
 ```bash
 curl http://localhost:8100/health
-# {"status": "ok", "env": "development"}
+# {"status": "ok", "env": "paper"}
 ```
 
 ### 5. Build and start the MCP server
@@ -115,9 +135,9 @@ Open a second terminal:
 
 ```bash
 cd packages/mcp
-pnpm install
-pnpm build
-pnpm dev        # stdio transport — for direct Claude Desktop integration
+npm install
+npm run build
+npm run dev     # stdio transport — for direct Claude Desktop integration
 ```
 
 ---
@@ -128,6 +148,13 @@ Add the following to your Claude Desktop configuration file.
 
 **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
 **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+
+Get the correct path by running this in your terminal:
+```bash
+echo "$(pwd)/packages/mcp/dist/index.js"
+```
+
+Then paste it into the config:
 
 ```json
 {
@@ -144,7 +171,7 @@ Add the following to your Claude Desktop configuration file.
 }
 ```
 
-Replace `/absolute/path/to/sentinel-execution-mcp` with the actual path on your machine. Restart Claude Desktop after saving.
+Restart Claude Desktop after saving. You should see a hammer icon (🔨) in the chat input — click it to confirm Sentinel's 40 tools are loaded.
 
 ---
 
