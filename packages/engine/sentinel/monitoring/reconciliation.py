@@ -6,11 +6,8 @@ This is critical for live trading — silent drift means unexpected exposure.
 """
 from __future__ import annotations
 
-import json
-import logging
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass
 from datetime import datetime
-from decimal import Decimal
 from typing import Any
 
 import structlog

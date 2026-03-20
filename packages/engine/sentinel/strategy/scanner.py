@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import structlog
 
@@ -12,7 +12,8 @@ from sentinel.market.service import MarketDataService
 from sentinel.regime.classifier import RegimeClassifier
 from sentinel.regime.models import RegimeSnapshot
 from sentinel.strategy.base import StrategyResult
-from sentinel.strategy.registry import StrategyRegistry, registry as global_registry
+from sentinel.strategy.registry import StrategyRegistry
+from sentinel.strategy.registry import registry as global_registry
 
 logger = structlog.get_logger(__name__)
 
@@ -62,7 +63,7 @@ class WatchlistScanner:
         context_bars: list[Bar] | None = None
         if self._context_symbol and regime_override is None:
             try:
-                now = datetime.now(tz=timezone.utc)
+                now = datetime.now(tz=UTC)
                 context_bars = await self._market.get_bars(
                     self._context_symbol,
                     self._timeframe,
@@ -84,7 +85,7 @@ class WatchlistScanner:
         nested_results = await asyncio.gather(*tasks, return_exceptions=True)
 
         all_results: list[StrategyResult] = []
-        for symbol, result in zip(symbols, nested_results):
+        for symbol, result in zip(symbols, nested_results, strict=False):
             if isinstance(result, Exception):
                 logger.error("scanner.symbol_failed", symbol=symbol, error=str(result))
                 continue
@@ -107,7 +108,7 @@ class WatchlistScanner:
     ) -> list[StrategyResult]:
         """Scan a single symbol. Returns all results (including no-signal)."""
         try:
-            now = datetime.now(tz=timezone.utc)
+            now = datetime.now(tz=UTC)
             bars = await self._market.get_bars(
                 symbol,
                 self._timeframe,
@@ -147,7 +148,7 @@ class WatchlistScanner:
                         atr_swing=0.3,
                         orb=0.3,
                     ),
-                    classified_at=datetime.now(tz=timezone.utc),
+                    classified_at=datetime.now(tz=UTC),
                     bars_analyzed=len(bars),
                     reasoning="Classification failed — using safe defaults.",
                 )

@@ -1,11 +1,11 @@
 """FastAPI endpoints for monitoring: health, reconciliation, alerts, metrics."""
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import structlog
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Request, status
 from fastapi.responses import JSONResponse
 
 logger = structlog.get_logger(__name__)
@@ -151,7 +151,7 @@ async def metrics(request: Request) -> dict[str, Any]:
             name: {"status": c.status, "latency_ms": c.latency_ms}
             for name, c in health.checks.items()
         },
-        "ts": datetime.now(tz=timezone.utc).isoformat(),
+        "ts": datetime.now(tz=UTC).isoformat(),
     }
 
 
@@ -160,7 +160,6 @@ async def metrics(request: Request) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 def _serialize_health(health: Any) -> dict[str, Any]:
-    from sentinel.monitoring.health import SystemHealth
     return {
         "status": health.status,
         "uptime_seconds": round(health.uptime_seconds, 1),

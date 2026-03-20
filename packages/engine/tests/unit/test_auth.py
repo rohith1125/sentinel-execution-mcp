@@ -4,16 +4,14 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 from datetime import datetime
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 import pytest
 
 from sentinel.auth.models import APIClient
-from sentinel.auth.service import APIKeyService
 from sentinel.auth.rate_limiter import RateLimiter
-
+from sentinel.auth.service import APIKeyService
 
 # ---------------------------------------------------------------------------
 # APIKeyService tests
@@ -135,7 +133,6 @@ def _make_client(scopes: list[str]) -> APIClient:
 
 def test_require_scope_admin_bypasses_all_scopes():
     """Admin scope should satisfy any scope check."""
-    from fastapi import HTTPException
     from sentinel.auth.middleware import require_scope
 
     admin_client = _make_client(["admin"])
@@ -149,7 +146,7 @@ def test_require_scope_admin_bypasses_all_scopes():
 
 def test_require_scope_missing_scope_raises():
     from fastapi import HTTPException
-    from sentinel.auth.middleware import require_scope
+
 
     read_only_client = _make_client(["read"])
     # Directly invoke the scope logic

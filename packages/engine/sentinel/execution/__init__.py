@@ -4,8 +4,8 @@ from sentinel.execution.service import ExecutionService
 
 __all__ = [
     "BrokerAdapter",
+    "ExecutionService",
     "OrderRequest",
     "OrderUpdate",
     "PaperBroker",
-    "ExecutionService",
 ]

@@ -10,7 +10,6 @@ import math
 
 import numpy as np
 import pandas as pd
-import pytest
 
 from sentinel.regime.indicators import (
     compute_adx,
@@ -22,7 +21,6 @@ from sentinel.regime.indicators import (
     compute_rsi,
     compute_volume_ratio,
     compute_vwap,
-    compute_vwap_deviation,
 )
 
 

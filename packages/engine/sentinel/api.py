@@ -8,26 +8,26 @@ from datetime import datetime
 from typing import Any
 
 import structlog
-from fastapi import Depends, FastAPI, HTTPException, Request, status
+from fastapi import Depends, FastAPI, Request, status
 from fastapi.responses import JSONResponse
 
-from sentinel.auth.middleware import get_current_client, require_scope
+from sentinel.audit.router import router as audit_router
+from sentinel.auth.middleware import require_scope
 from sentinel.auth.models import APIClient
 from sentinel.auth.rate_limiter import RateLimiter
 from sentinel.auth.service import APIKeyService, get_key_service
-from sentinel.config import Settings, configure_logging, get_settings
-from sentinel.db.base import create_all_tables, dispose_engine, get_engine, get_session_factory
-from sentinel.watchlist.router import router as watchlist_router
-from sentinel.market.router import router as market_router
-from sentinel.regime.router import router as regime_router
-from sentinel.strategy.router import router as strategy_router
-from sentinel.risk.router import router as risk_router
-from sentinel.execution.router import router as execution_router
-from sentinel.execution.portfolio_router import router as portfolio_router
-from sentinel.governance.router import router as governance_router
-from sentinel.audit.router import router as audit_router
-from sentinel.monitoring.router import router as monitoring_router
 from sentinel.backtest.router import router as backtest_router
+from sentinel.config import Settings, configure_logging, get_settings
+from sentinel.db.base import dispose_engine, get_engine, get_session_factory
+from sentinel.execution.portfolio_router import router as portfolio_router
+from sentinel.execution.router import router as execution_router
+from sentinel.governance.router import router as governance_router
+from sentinel.market.router import router as market_router
+from sentinel.monitoring.router import router as monitoring_router
+from sentinel.regime.router import router as regime_router
+from sentinel.risk.router import router as risk_router
+from sentinel.strategy.router import router as strategy_router
+from sentinel.watchlist.router import router as watchlist_router
 
 logger = structlog.get_logger(__name__)
 
@@ -232,9 +232,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # Routers — inject DB session dependency properly
     # ---------------------------------------------------------------------------
 
-    from functools import partial
 
-    from sqlalchemy.ext.asyncio import AsyncSession
 
     async def db_session() -> Any:  # type: ignore[return]
         factory = get_session_factory(settings)

@@ -13,8 +13,8 @@ from __future__ import annotations
 
 import json
 import uuid
-from dataclasses import dataclass, field, asdict
-from datetime import datetime, timezone
+from dataclasses import dataclass
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
@@ -77,7 +77,7 @@ class AlertService:
             message=message,
             context=ctx,
             source=source,
-            fired_at=datetime.now(tz=timezone.utc),
+            fired_at=datetime.now(tz=UTC),
             alert_id=str(uuid.uuid4()),
         )
 

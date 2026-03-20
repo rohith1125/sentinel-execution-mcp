@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import uuid
-from datetime import date, datetime, timezone
+from datetime import date, datetime
 
 import structlog
 from fastapi import APIRouter, HTTPException, Request, status
@@ -74,7 +74,7 @@ def _get_mock_bars(symbol: str, start_date: date, end_date: date):  # type: igno
     import json
     from decimal import Decimal
     from pathlib import Path
-    from datetime import datetime
+
     from sentinel.market.provider import Bar
 
     fixture_path = Path(__file__).parent.parent.parent / "tests" / "fixtures" / "sample_bars_daily.json"
@@ -143,6 +143,7 @@ def _result_to_dict(result) -> dict:  # type: ignore[type-arg]
 @router.post("/run", response_model=BacktestResponse)
 async def run_backtest(body: BacktestRequest, request: Request) -> BacktestResponse:
     from decimal import Decimal
+
     from sentinel.backtest.engine import BacktestConfig, BacktestEngine
     from sentinel.regime.classifier import RegimeClassifier
     from sentinel.strategy.registry import registry

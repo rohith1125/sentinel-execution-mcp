@@ -1,19 +1,15 @@
 """Unit tests for sentinel.monitoring: reconciliation and alerts."""
 from __future__ import annotations
 
-import asyncio
-from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from sentinel.monitoring.alerts import Alert, AlertLevel, AlertService
+from sentinel.monitoring.alerts import AlertLevel, AlertService
 from sentinel.monitoring.reconciliation import (
     PositionReconciler,
-    ReconciliationDiscrepancy,
     ReconciliationResult,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers / fixtures

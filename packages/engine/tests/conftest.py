@@ -7,8 +7,7 @@ at the cost of some setup overhead (acceptable for correctness).
 """
 from __future__ import annotations
 
-import asyncio
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from decimal import Decimal
 
 import pytest

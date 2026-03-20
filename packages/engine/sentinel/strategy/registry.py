@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import UTC
+
 from sentinel.market.provider import Bar
 from sentinel.regime.models import RegimeSnapshot
 from sentinel.strategy.base import StrategyBase, StrategyResult
@@ -43,14 +45,14 @@ class StrategyRegistry:
                 results.append(result)
             except Exception as exc:
                 # Gracefully degrade — record failure as no-signal result
-                from datetime import datetime, timezone
+                from datetime import datetime
 
                 results.append(
                     StrategyResult(
                         strategy_name=strategy.name,
                         symbol=symbol,
                         signal=None,
-                        evaluated_at=datetime.now(tz=timezone.utc),
+                        evaluated_at=datetime.now(tz=UTC),
                         bars_used=len(bars),
                         regime_compatibility=0.0,
                         rejection_reason=f"Strategy raised exception: {exc!r}",
@@ -65,12 +67,12 @@ registry = StrategyRegistry()
 # Auto-register all built-in strategy implementations
 def _load_builtin_strategies() -> None:
     from sentinel.strategy.implementations import (  # noqa: F401
-        momentum_breakout,
-        vwap_reclaim,
-        ema_trend,
-        rsi_mean_reversion,
         atr_swing,
+        ema_trend,
+        momentum_breakout,
         orb,
+        rsi_mean_reversion,
+        vwap_reclaim,
     )
 
 _load_builtin_strategies()

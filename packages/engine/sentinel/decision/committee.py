@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import structlog
 
@@ -19,7 +19,8 @@ from sentinel.decision.filters import (
 from sentinel.decision.models import DecisionRequest, DecisionResult, VoteRecord
 from sentinel.domain.types import DecisionOutcome
 from sentinel.market.provider import Bar
-from sentinel.strategy.base import StrategyBase
+from sentinel.regime.models import RegimeSnapshot
+from sentinel.strategy.base import StrategyBase, StrategySignal
 from sentinel.strategy.registry import registry as global_registry
 
 logger = structlog.get_logger(__name__)
@@ -52,7 +53,7 @@ class DecisionCommittee:
 
     def __init__(
         self,
-        strategy_registry: "StrategyRegistry | None" = None,  # type: ignore[name-defined]  # noqa: F821
+        strategy_registry: StrategyRegistry | None = None,  # type: ignore[name-defined]  # noqa: F821
         min_rr: float = 1.5,
         min_confidence: float = 0.55,
         min_spread_bps: float = 20.0,
@@ -74,7 +75,7 @@ class DecisionCommittee:
         """Run all filters and produce a final decision."""
         signal = request.signal
         regime = request.regime
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=UTC)
 
         # Resolve strategy for regime compatibility check
         strategy_name = getattr(signal, "strategy_name", None)
@@ -218,8 +219,8 @@ class DecisionCommittee:
     def _detect_anomalies(
         self,
         request: DecisionRequest,
-        regime: "RegimeSnapshot",  # type: ignore[name-defined]
-        signal: "StrategySignal",  # type: ignore[name-defined]
+        regime: RegimeSnapshot,
+        signal: StrategySignal,
         score: float,
     ) -> list[str]:
         """Return list of anomaly descriptions that warrant human review."""
@@ -246,9 +247,9 @@ class DecisionCommittee:
             )
 
         # New strategy (not yet in live state) — check notes
-        strategy = self._registry.get(signal.side.value)  # loose check
+        _strategy = self._registry.get(signal.side.value)  # loose check
         # We check strategy_name if available via supporting_indicators
-        strategy_name = signal.supporting_indicators.get("strategy_name_flag", 0.0)
+        _strategy_name = signal.supporting_indicators.get("strategy_name_flag", 0.0)
 
         # Score close to approval boundary (uncertain)
         if _APPROVE_THRESHOLD <= score < _APPROVE_THRESHOLD + 0.05:

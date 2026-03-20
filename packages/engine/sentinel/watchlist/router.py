@@ -5,12 +5,12 @@ from __future__ import annotations
 from typing import Annotated
 
 import structlog
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Query, status
 from pydantic import BaseModel, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from sentinel.config import Settings, get_settings
-from sentinel.db.base import get_session, db_session_placeholder
+from sentinel.db.base import db_session_placeholder
 from sentinel.domain.types import AssetClass
 from sentinel.watchlist.service import WatchlistService
 

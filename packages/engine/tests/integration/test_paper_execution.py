@@ -4,19 +4,18 @@ Tests the PaperBroker end-to-end including order submission, fills, and account 
 """
 from __future__ import annotations
 
-import json
+from datetime import UTC, datetime
+from decimal import Decimal
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
 import pytest_asyncio
-from decimal import Decimal
-from datetime import datetime, timezone
-from unittest.mock import AsyncMock, MagicMock
 
 from sentinel.config import Settings
 from sentinel.domain.types import OrderSide, OrderStatus, OrderType, TimeInForce
-from sentinel.execution.broker import OrderRequest, OrderUpdate
+from sentinel.execution.broker import OrderRequest
 from sentinel.execution.paper import PaperBroker
 from sentinel.market.provider import Bar, Quote
-
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -60,7 +59,7 @@ def _make_market_service(
         ask=ask,
         bid_size=100,
         ask_size=100,
-        timestamp=datetime.now(tz=timezone.utc),
+        timestamp=datetime.now(tz=UTC),
     )
     svc.get_quote.return_value = quote
     snapshot = MagicMock()
@@ -104,7 +103,7 @@ def _bar(
 ) -> Bar:
     return Bar(
         symbol=symbol,
-        timestamp=datetime.now(tz=timezone.utc),
+        timestamp=datetime.now(tz=UTC),
         open=open_,
         high=high,
         low=low,

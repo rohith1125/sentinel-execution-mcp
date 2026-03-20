@@ -5,7 +5,7 @@
  * response formatting, and error handling without requiring a live engine.
  */
 
-import { describe, it, expect, vi, beforeEach, type MockInstance } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { EngineClient } from '../engine-client.js';
 
 // ---------------------------------------------------------------------------

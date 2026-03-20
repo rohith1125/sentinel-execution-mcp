@@ -7,7 +7,6 @@ from datetime import datetime
 from decimal import Decimal
 
 from sqlalchemy import (
-    DECIMAL,
     Boolean,
     DateTime,
     ForeignKey,
@@ -23,10 +22,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sentinel.db.base import Base
 from sentinel.domain.types import (
     AssetClass,
-    DecisionOutcome,
-    OrderSide,
     OrderStatus,
-    OrderType,
     PositionSide,
     StrategyState,
     TimeInForce,

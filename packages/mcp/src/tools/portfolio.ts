@@ -1,5 +1,4 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { z } from 'zod';
 import type { EngineClient } from '../engine-client.js';
 import { formatToolError as engineError } from '../errors.js';
 

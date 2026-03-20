@@ -5,8 +5,8 @@ Tracks system-level metrics for operational visibility.
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from dataclasses import dataclass
+from datetime import UTC, datetime
 from typing import Any
 
 import structlog
@@ -71,7 +71,7 @@ class HealthMonitor:
 
     async def check_all(self) -> SystemHealth:
         """Run all checks and aggregate into a SystemHealth record."""
-        checked_at = datetime.now(tz=timezone.utc)
+        checked_at = datetime.now(tz=UTC)
         checks: dict[str, CheckResult] = {}
 
         db_result = await self.check_database()
@@ -274,7 +274,7 @@ class HealthMonitor:
         kill_switch_active = False
 
         try:
-            from sqlalchemy import text, func
+            from sqlalchemy import text
 
             result = await self._db.execute(
                 text("SELECT COUNT(*) FROM positions WHERE status = 'open'")

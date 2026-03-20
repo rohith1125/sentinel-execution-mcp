@@ -10,8 +10,8 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
-from sentinel.db.base import Base
 from sentinel.db import models as _  # noqa: F401 — ensure all models are imported
+from sentinel.db.base import Base
 
 config = context.config
 fileConfig(config.config_file_name)  # type: ignore[arg-type]

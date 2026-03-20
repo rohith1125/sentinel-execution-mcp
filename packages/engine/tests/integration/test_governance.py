@@ -2,11 +2,9 @@
 from __future__ import annotations
 
 import pytest
-import pytest_asyncio
 
 from sentinel.domain.types import StrategyState
 from sentinel.governance.service import GovernanceError, GovernanceService
-
 
 # ---------------------------------------------------------------------------
 # Test 1: register_strategy creates DRAFT record

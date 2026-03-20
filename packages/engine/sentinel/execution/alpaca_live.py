@@ -17,7 +17,7 @@ import asyncio
 import logging
 import os
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
 
@@ -99,7 +99,7 @@ class AlpacaLiveBroker:
     def __init__(self, settings: Settings) -> None:
         app_env = getattr(settings, "app_env", "development")
         if app_env.lower() == "development":
-            raise EnvironmentError(
+            raise OSError(
                 "AlpacaLiveBroker cannot be used in 'development' environment. "
                 "Use PaperBroker instead."
             )
@@ -108,7 +108,7 @@ class AlpacaLiveBroker:
         api_secret = os.environ.get("ALPACA_API_SECRET") or getattr(settings, "alpaca_api_secret", None)
 
         if not api_key or not api_secret:
-            raise EnvironmentError(
+            raise OSError(
                 "ALPACA_API_KEY and ALPACA_API_SECRET must be set in the environment."
             )
 
@@ -131,7 +131,7 @@ class AlpacaLiveBroker:
 
     async def submit_order(self, request: OrderRequest) -> OrderUpdate:
         """Submit to Alpaca v2 orders API. Maps our types to Alpaca's format."""
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=UTC)
 
         if not request.client_order_id:
             logger.error("AlpacaLiveBroker: refusing to submit order without client_order_id")
@@ -211,7 +211,7 @@ class AlpacaLiveBroker:
 
     async def cancel_order(self, broker_order_id: str) -> OrderUpdate:
         """Cancel an order by Alpaca order ID."""
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=UTC)
         logger.info("AlpacaLiveBroker: cancelling order %s", broker_order_id)
 
         try:
@@ -253,7 +253,7 @@ class AlpacaLiveBroker:
 
     async def get_order(self, broker_order_id: str) -> OrderUpdate:
         """Fetch current order status from Alpaca."""
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=UTC)
         try:
             async with httpx.AsyncClient() as client:
                 resp = await client.get(
@@ -397,7 +397,7 @@ class AlpacaLiveBroker:
 
     def _parse_order_response(self, data: dict) -> OrderUpdate:
         """Parse Alpaca order response dict into our OrderUpdate model."""
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=UTC)
         broker_order_id = data.get("id", "")
         client_order_id = data.get("client_order_id", "")
         alpaca_status = data.get("status", "rejected")

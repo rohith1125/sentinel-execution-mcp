@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import pytest
 
-from sentinel.domain.types import AssetClass
 from sentinel.market.mock import MockProvider
 from sentinel.watchlist.service import WatchlistService
 

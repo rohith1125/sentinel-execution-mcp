@@ -113,7 +113,7 @@ class Money:
     def __post_init__(self) -> None:
         if not isinstance(self.amount, Decimal):
             object.__setattr__(self, "amount", Decimal(str(self.amount)))
-        if len(self.currency) != 3:  # noqa: PLR2004
+        if len(self.currency) != 3:
             raise ValueError(f"Currency must be a 3-letter ISO code, got: {self.currency!r}")
 
     def __add__(self, other: Money) -> Money:

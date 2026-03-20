@@ -11,7 +11,6 @@ from sentinel.domain.types import (
     AssetClass,
     DecisionOutcome,
     OrderSide,
-    OrderStatus,
     OrderType,
     PositionSide,
     RegimeLabel,

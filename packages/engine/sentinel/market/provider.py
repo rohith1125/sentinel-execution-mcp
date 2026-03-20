@@ -6,7 +6,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Protocol, runtime_checkable
 
-from pydantic import BaseModel, field_validator, computed_field
+from pydantic import BaseModel, computed_field, field_validator
 
 
 class Bar(BaseModel):

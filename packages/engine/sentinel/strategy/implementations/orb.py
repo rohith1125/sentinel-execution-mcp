@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, time, timezone
+from datetime import UTC, datetime, time
 from decimal import Decimal
 from typing import ClassVar
 
@@ -10,7 +10,7 @@ import pandas as pd
 
 from sentinel.domain.types import OrderSide, RegimeLabel
 from sentinel.market.provider import Bar
-from sentinel.regime.indicators import compute_atr, compute_volume_ratio
+from sentinel.regime.indicators import compute_atr
 from sentinel.regime.models import RegimeSnapshot
 from sentinel.strategy.base import StrategyBase, StrategyResult, StrategySignal
 from sentinel.strategy.registry import registry
@@ -138,9 +138,9 @@ class OpeningRangeBreakoutStrategy(StrategyBase):
             pass
 
         # Simple gap check: first bar open vs first bar close (intra-open-range gap)
-        gap_pct = abs(session_open - prior_close_approx) / prior_close_approx * 100 if prior_close_approx > 0 else 0.0
+        _gap_pct = abs(session_open - prior_close_approx) / prior_close_approx * 100 if prior_close_approx > 0 else 0.0
         # Only flag if obviously gapped (open far from first bar's range)
-        actual_gap = abs(float(bars[0].open) - float(bars[0].close)) / float(bars[0].close) * 100
+        _actual_gap = abs(float(bars[0].open) - float(bars[0].close)) / float(bars[0].close) * 100
 
         # Check breakout on current bar
         latest_high = float(high_s.iloc[-1])
@@ -207,8 +207,8 @@ class OpeningRangeBreakoutStrategy(StrategyBase):
             supporting_indicators=indicators,
             invalidation_conditions=[
                 f"Price retraces back inside OR (below {or_high:.2f} for long / above {or_low:.2f} for short)",
-                f"Time stop: exit by 11:00 AM ET if target not reached",
-                f"Volume drops off sharply after breakout",
+                "Time stop: exit by 11:00 AM ET if target not reached",
+                "Volume drops off sharply after breakout",
             ],
             max_hold_bars=15,  # ~75 min at 5-min bars
             notes=(
@@ -223,7 +223,7 @@ class OpeningRangeBreakoutStrategy(StrategyBase):
             strategy_name=self.name,
             symbol=symbol,
             signal=signal,
-            evaluated_at=datetime.now(tz=timezone.utc),
+            evaluated_at=datetime.now(tz=UTC),
             bars_used=len(bars),
             regime_compatibility=compat_score,
         )

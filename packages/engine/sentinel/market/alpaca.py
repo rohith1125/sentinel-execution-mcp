@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 from datetime import datetime
 from decimal import Decimal
 from typing import Any
@@ -18,7 +17,6 @@ from tenacity import (
 
 from sentinel.market.provider import (
     Bar,
-    MarketDataProvider,
     ProviderError,
     Quote,
     RateLimitError,

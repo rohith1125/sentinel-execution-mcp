@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 
 from sentinel.config import Settings, get_settings
-from sentinel.domain.types import OrderSide, OrderStatus, OrderType, TimeInForce
+from sentinel.domain.types import OrderSide, OrderType, TimeInForce
 
 logger = structlog.get_logger(__name__)
 

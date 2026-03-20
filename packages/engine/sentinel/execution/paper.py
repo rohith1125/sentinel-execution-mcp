@@ -17,8 +17,8 @@ import json
 import logging
 import random
 import uuid
-from datetime import datetime, timezone
-from decimal import Decimal, ROUND_HALF_UP
+from datetime import UTC, datetime
+from decimal import ROUND_HALF_UP, Decimal
 from typing import TYPE_CHECKING
 
 from sentinel.config import Settings
@@ -28,6 +28,7 @@ from sentinel.market.provider import Bar, Quote
 
 if TYPE_CHECKING:
     from redis.asyncio import Redis
+
     from sentinel.market.provider import MarketDataService
 
 logger = logging.getLogger(__name__)
@@ -51,8 +52,8 @@ class PaperBroker:
     def __init__(
         self,
         settings: Settings,
-        market_service: "MarketDataService",
-        redis: "Redis",
+        market_service: MarketDataService,
+        redis: Redis,
     ) -> None:
         self._settings = settings
         self._market = market_service
@@ -66,7 +67,7 @@ class PaperBroker:
     async def submit_order(self, request: OrderRequest) -> OrderUpdate:
         """Assign broker_order_id, determine fill strategy, execute fill."""
         broker_order_id = f"PAPER-{uuid.uuid4().hex[:12].upper()}"
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=UTC)
 
         try:
             quote = await self._market.get_quote(request.symbol)
@@ -168,7 +169,7 @@ class PaperBroker:
 
     async def cancel_order(self, broker_order_id: str) -> OrderUpdate:
         """Cancel a pending order."""
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=UTC)
         key = f"{_PAPER_ORDERS_PREFIX}{broker_order_id}"
         raw = await self._redis.get(key)
 
@@ -205,7 +206,7 @@ class PaperBroker:
 
     async def get_order(self, broker_order_id: str) -> OrderUpdate:
         """Fetch current status of a paper order."""
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=UTC)
         key = f"{_PAPER_ORDERS_PREFIX}{broker_order_id}"
         raw = await self._redis.get(key)
 
@@ -254,7 +255,7 @@ class PaperBroker:
     async def is_market_open(self) -> bool:
         """Check if market is currently open (simplified: check time)."""
         from datetime import time as _time
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=UTC)
         # EST offset (simplified)
         from datetime import timedelta
         est_now = now - timedelta(hours=5)
@@ -288,7 +289,7 @@ class PaperBroker:
         """
         from sentinel.domain.types import TimeInForce
         cancelled_count = 0
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=UTC)
         pattern = f"{_PAPER_ORDERS_PREFIX}*"
         keys: list[bytes] = []
         async for key in self._redis.scan_iter(pattern):
@@ -330,7 +331,7 @@ class PaperBroker:
         Returns list of OrderUpdates for any orders that filled.
         """
         updates: list[OrderUpdate] = []
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=UTC)
 
         # Scan all pending order keys
         pattern = f"{_PAPER_ORDERS_PREFIX}*"
@@ -445,7 +446,7 @@ class PaperBroker:
             "equity": str(starting_cash),
             "day_pnl": "0.00",
             "starting_cash": str(starting_cash),
-            "reset_at": datetime.now(tz=timezone.utc).isoformat(),
+            "reset_at": datetime.now(tz=UTC).isoformat(),
         }
         await self._redis.set(_PAPER_ACCOUNT_KEY, json.dumps(account_data))
         await self._redis.delete(_PAPER_POSITIONS_KEY)
@@ -515,7 +516,7 @@ class PaperBroker:
 
     async def _apply_fill(
         self,
-        request: "OrderRequest | _MinimalOrderInfo",
+        request: OrderRequest | _MinimalOrderInfo,
         filled_qty: int,
         fill_price: Decimal,
         broker_order_id: str,
@@ -598,7 +599,7 @@ class PaperBroker:
             "filled_qty": request.quantity - remaining_qty,
             "filled_avg_price": None,
             "is_partial_remainder": is_partial_remainder,
-            "timestamp": datetime.now(tz=timezone.utc).isoformat(),
+            "timestamp": datetime.now(tz=UTC).isoformat(),
         }
         key = f"{_PAPER_ORDERS_PREFIX}{broker_order_id}"
         await self._redis.set(key, json.dumps(data))

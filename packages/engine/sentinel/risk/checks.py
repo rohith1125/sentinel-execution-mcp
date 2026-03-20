@@ -9,16 +9,11 @@ Design principles:
 """
 from __future__ import annotations
 
-from datetime import datetime, time
+from datetime import UTC, datetime, time
 from decimal import Decimal
-from typing import TYPE_CHECKING
 
 from sentinel.domain.types import OrderSide
 from sentinel.risk.models import KillSwitchState, RiskCheckResult
-
-if TYPE_CHECKING:
-    pass
-
 
 # ---------------------------------------------------------------------------
 # Hard blocks
@@ -488,8 +483,7 @@ def check_consecutive_losses_cooldown(
 
     # Check if cooldown has expired
     if last_loss_time is not None:
-        from datetime import timezone, timedelta
-        now = datetime.now(tz=timezone.utc) if last_loss_time.tzinfo else datetime.utcnow()
+        now = datetime.now(tz=UTC) if last_loss_time.tzinfo else datetime.utcnow()
         elapsed_minutes = (now - last_loss_time).total_seconds() / 60
         if elapsed_minutes >= cooldown_minutes:
             return RiskCheckResult(
@@ -628,7 +622,7 @@ def check_correlated_exposure(
         passed=passed,
         is_hard_block=False,
         message=(
-            f"No highly correlated existing positions."
+            "No highly correlated existing positions."
             if passed
             else f"Adding {symbol} creates correlated exposure with: {', '.join(highly_correlated)}. "
             f"Consider portfolio diversification."

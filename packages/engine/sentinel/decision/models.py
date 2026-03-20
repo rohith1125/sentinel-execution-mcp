@@ -38,7 +38,7 @@ class DecisionRequest:
 
     symbol: str
     signal: StrategySignal
-    regime: "RegimeSnapshot"  # type: ignore[name-defined]  # noqa: F821
+    regime: RegimeSnapshot  # type: ignore[name-defined]  # noqa: F821
     snapshot: Snapshot
     portfolio_context: dict                 # current positions, exposure, P&L, etc.
     account_value: Decimal

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 from typing import ClassVar
 
@@ -178,7 +178,7 @@ class VWAPReclaimStrategy(StrategyBase):
             strategy_name=self.name,
             symbol=symbol,
             signal=signal,
-            evaluated_at=datetime.now(tz=timezone.utc),
+            evaluated_at=datetime.now(tz=UTC),
             bars_used=len(bars),
             regime_compatibility=compat_score,
         )

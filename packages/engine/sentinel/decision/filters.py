@@ -8,14 +8,14 @@ from __future__ import annotations
 
 from datetime import datetime, time
 
+import pandas as pd
+
 from sentinel.decision.models import VoteRecord
 from sentinel.domain.types import OrderSide, RegimeLabel
 from sentinel.market.provider import Bar, Snapshot
 from sentinel.regime.indicators import compute_atr
 from sentinel.regime.models import RegimeSnapshot
 from sentinel.strategy.base import StrategyBase, StrategySignal
-
-import pandas as pd
 
 # Weights
 _W_REGIME = 0.20

@@ -5,7 +5,7 @@ Tests verify correctness of core calculations — no DB or Redis required.
 from __future__ import annotations
 
 import math
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from unittest.mock import MagicMock
 
@@ -14,13 +14,11 @@ import pytest
 
 from sentinel.backtest.engine import BacktestConfig, BacktestEngine, BacktestResult, BacktestTrade
 from sentinel.backtest.stats import (
-    BacktestStats,
     compute_max_drawdown,
     compute_sharpe,
     compute_stats,
 )
 from sentinel.market.provider import Bar
-
 
 # ---------------------------------------------------------------------------
 # Helpers / factories
@@ -35,7 +33,7 @@ def _make_bar(
     close: float = 131.0,
     volume: int = 1_000_000,
 ) -> Bar:
-    ts = datetime(dt.year, dt.month, dt.day, tzinfo=timezone.utc)
+    ts = datetime(dt.year, dt.month, dt.day, tzinfo=UTC)
     return Bar(
         symbol=symbol,
         timestamp=ts,
@@ -136,8 +134,7 @@ class TestEquityCurve:
         We do this indirectly by checking a strategy that signals on bar 0 still
         only fills (entry_date) on the subsequent bar.
         """
-        from sentinel.domain.types import OrderSide
-        from sentinel.strategy.base import StrategySignal, StrategyResult
+        from sentinel.strategy.base import StrategySignal
 
         config = _make_config()
         classifier = _make_mock_regime_classifier()
@@ -270,7 +267,7 @@ class TestWalkForward:
         bars = [_make_bar(dt=date(2023, 1, 3)) for _ in range(50)]
         # Patch timestamps to be sequential
         from datetime import timedelta
-        start_dt = datetime(2023, 1, 3, tzinfo=timezone.utc)
+        start_dt = datetime(2023, 1, 3, tzinfo=UTC)
         for i, bar in enumerate(bars):
             object.__setattr__(bar, "timestamp", start_dt + timedelta(days=i))
             object.__setattr__(bar, "symbol", "AAPL")

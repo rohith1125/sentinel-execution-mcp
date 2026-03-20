@@ -11,7 +11,7 @@ Design: conservative and realistic
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
@@ -61,7 +61,7 @@ class BacktestResult:
     config: BacktestConfig
     trades: list[BacktestTrade]
     equity_curve: list[tuple[date, Decimal]]  # (date, equity)
-    stats: "BacktestStats"
+    stats: BacktestStats
     ran_at: datetime
 
 
@@ -264,7 +264,7 @@ class BacktestEngine:
             trades=trades,
             equity_curve=equity_curve,
             stats=stats,
-            ran_at=datetime.now(tz=timezone.utc),
+            ran_at=datetime.now(tz=UTC),
         )
 
     def _update_open_position(self, position: dict, bar: Bar) -> dict | None:
@@ -274,8 +274,8 @@ class BacktestEngine:
         target = position["target_price"]
         shares = position["shares"]
         entry_price = position["entry_price"]
-        max_hold_bars = position.get("max_hold_bars")
-        bars_held = bar  # placeholder — actual hold_bars tracked in run()
+        _max_hold_bars = position.get("max_hold_bars")
+        _bars_held = bar  # placeholder — actual hold_bars tracked in run()
 
         if side == "buy":
             # Stop hit: low touched stop

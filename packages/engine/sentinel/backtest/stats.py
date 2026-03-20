@@ -193,7 +193,7 @@ def compute_max_drawdown(equity_curve: list[Decimal]) -> tuple[float, int]:
 
     values = [float(v) for v in equity_curve]
     peak = values[0]
-    peak_idx = 0
+    _peak_idx = 0
     max_dd = 0.0
     max_dur = 0
     in_dd_since = 0
@@ -201,15 +201,13 @@ def compute_max_drawdown(equity_curve: list[Decimal]) -> tuple[float, int]:
     for i, v in enumerate(values):
         if v >= peak:
             peak = v
-            peak_idx = i
+            _peak_idx = i
             in_dd_since = i
         else:
             dd = (peak - v) / peak if peak > 0 else 0.0
             dur = i - in_dd_since
-            if dd > max_dd:
-                max_dd = dd
-            if dur > max_dur:
-                max_dur = dur
+            max_dd = max(max_dd, dd)
+            max_dur = max(max_dur, dur)
 
     return max_dd, max_dur
 

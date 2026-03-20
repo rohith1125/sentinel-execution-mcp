@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 from typing import ClassVar
 
@@ -84,7 +84,7 @@ class MomentumBreakoutStrategy(StrategyBase):
         ema_50 = compute_ema(close, 50)
         vol_ratio_series = compute_volume_ratio(volume)
 
-        latest_close = float(close.iloc[-1])
+        _latest_close = float(close.iloc[-1])
         latest_high = float(high.iloc[-1])
         rsi_val = float(rsi_series.iloc[-1])
         ema_20_val = float(ema_20.iloc[-1])
@@ -163,7 +163,7 @@ class MomentumBreakoutStrategy(StrategyBase):
                 f"Price closes below breakout level {breakout_level:.2f}",
                 f"RSI drops below {_RSI_MIN}",
                 "Volume collapses below 1x average",
-                f"EMA20 crosses below EMA50",
+                "EMA20 crosses below EMA50",
             ],
             max_hold_bars=48,
             notes=(
@@ -176,7 +176,7 @@ class MomentumBreakoutStrategy(StrategyBase):
             strategy_name=self.name,
             symbol=symbol,
             signal=signal,
-            evaluated_at=datetime.now(tz=timezone.utc),
+            evaluated_at=datetime.now(tz=UTC),
             bars_used=len(bars),
             regime_compatibility=compat_score,
         )

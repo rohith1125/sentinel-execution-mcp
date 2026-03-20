@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Annotated
+from datetime import UTC
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -10,7 +10,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from sentinel.audit.journal import AuditJournal
 from sentinel.audit.reports import ReportGenerator
-from sentinel.config import Settings, get_settings
 from sentinel.db.base import db_session_placeholder
 
 logger = structlog.get_logger(__name__)
@@ -102,10 +101,10 @@ async def trade_blotter(
     strategy: str | None = Query(None),
     session: AsyncSession = Depends(db_session_placeholder),
 ) -> list[dict]:
-    from datetime import datetime, timezone
+    from datetime import datetime
     try:
-        start_dt = datetime.fromisoformat(start).replace(tzinfo=timezone.utc)
-        end_dt = datetime.fromisoformat(end).replace(tzinfo=timezone.utc)
+        start_dt = datetime.fromisoformat(start).replace(tzinfo=UTC)
+        end_dt = datetime.fromisoformat(end).replace(tzinfo=UTC)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
     rg = ReportGenerator(db=session)

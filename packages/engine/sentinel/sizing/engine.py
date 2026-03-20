@@ -78,7 +78,7 @@ class PositionSizingEngine:
         current_positions_value: Decimal,
         avg_daily_volume: int,
         risk_pct: float | None = None,
-    ) -> "PositionSizingEngine.SizingResult":
+    ) -> PositionSizingEngine.SizingResult:
         """Compute position size applying all constraints.
 
         Args:
@@ -193,7 +193,7 @@ class PositionSizingEngine:
         account_value: Decimal,
         entry_price: Decimal,
         reason: str,
-    ) -> "PositionSizingEngine.SizingResult":
+    ) -> PositionSizingEngine.SizingResult:
         return PositionSizingEngine.SizingResult(
             shares=0,
             notional_value=Decimal("0"),

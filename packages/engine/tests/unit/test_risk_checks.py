@@ -11,10 +11,8 @@ All functions are pure — no I/O, no database, fully synchronous.
 """
 from __future__ import annotations
 
-from datetime import datetime, time, timedelta, timezone
+from datetime import UTC, datetime, time, timedelta
 from decimal import Decimal
-
-import pytest
 
 from sentinel.domain.types import OrderSide
 from sentinel.risk.checks import (
@@ -34,7 +32,6 @@ from sentinel.risk.checks import (
     check_weekly_drawdown,
 )
 from sentinel.risk.models import KillSwitchState
-
 
 # ---------------------------------------------------------------------------
 # check_kill_switch
@@ -66,7 +63,7 @@ class TestKillSwitch:
         assert "operator@firm.com" in result.message
 
     def test_global_halt_with_timestamp(self):
-        ts = datetime(2024, 1, 15, 9, 45, 0, tzinfo=timezone.utc)
+        ts = datetime(2024, 1, 15, 9, 45, 0, tzinfo=UTC)
         state = KillSwitchState(global_halt=True, halted_at=ts)
         result = check_kill_switch(state, "any_strat", "ANY")
         assert not result.passed

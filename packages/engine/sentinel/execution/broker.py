@@ -10,7 +10,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Protocol, runtime_checkable
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from sentinel.domain.types import OrderSide, OrderStatus, OrderType, TimeInForce
 

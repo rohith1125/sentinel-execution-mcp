@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import json
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -40,8 +40,8 @@ class HistoricalDataLoader:
             return cached
 
         # Fetch from provider
-        start_dt = datetime(start.year, start.month, start.day, tzinfo=timezone.utc)
-        end_dt = datetime(end.year, end.month, end.day, 23, 59, 59, tzinfo=timezone.utc)
+        start_dt = datetime(start.year, start.month, start.day, tzinfo=UTC)
+        end_dt = datetime(end.year, end.month, end.day, 23, 59, 59, tzinfo=UTC)
 
         bars = await self.market_service.get_bars(
             symbol=symbol,

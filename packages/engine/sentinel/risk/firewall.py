@@ -8,8 +8,8 @@ from __future__ import annotations
 
 import json
 import logging
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from dataclasses import dataclass
+from datetime import UTC, datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
@@ -61,7 +61,7 @@ class RiskFirewall:
     All kill switch state is persisted to Redis so it survives restarts.
     """
 
-    def __init__(self, settings: Settings, redis_client: "Redis") -> None:
+    def __init__(self, settings: Settings, redis_client: Redis) -> None:
         self._settings = settings
         self._redis = redis_client
 
@@ -82,7 +82,7 @@ class RiskFirewall:
     ) -> RiskAssessment:
         """Run all risk checks and return a complete assessment."""
         results: list[RiskCheckResult] = []
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=UTC)
 
         # --- Derived values ---
         proposed_notional = Decimal(str(proposed_shares)) * entry_price
@@ -287,7 +287,7 @@ class RiskFirewall:
         state = await self.get_kill_switch_state()
         state.global_halt = True
         state.halt_reason = reason
-        state.halted_at = datetime.now(tz=timezone.utc)
+        state.halted_at = datetime.now(tz=UTC)
         state.halted_by = operator
         await self._save_kill_switch_state(state)
         logger.critical(

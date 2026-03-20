@@ -7,9 +7,8 @@ from datetime import datetime, timedelta
 from typing import Annotated
 
 import structlog
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from sentinel.config import Settings, get_settings
 from sentinel.market.mock import MockProvider as MockMarketDataProvider
@@ -25,7 +24,6 @@ def _get_market_service(
     request: object = None,
 ) -> MarketDataService:
     """Build a MarketDataService backed by the mock provider (stateless per-request)."""
-    from fastapi import Request as _Request
 
     redis = None
     # Try to pull redis from app.state if we have a Request

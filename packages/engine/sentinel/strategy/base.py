@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 from typing import ClassVar
 
@@ -45,7 +45,7 @@ class StrategySignal(BaseModel):
         return round(reward / risk, 3)
 
     @model_validator(mode="after")
-    def validate_prices(self) -> "StrategySignal":
+    def validate_prices(self) -> StrategySignal:
         if self.entry_price is not None and self.stop_price == self.entry_price:
             raise ValueError("stop_price must differ from entry_price")
         return self
@@ -148,7 +148,7 @@ class StrategyBase(ABC):
             strategy_name=strategy_name,
             symbol=symbol,
             signal=None,
-            evaluated_at=datetime.now(tz=timezone.utc),
+            evaluated_at=datetime.now(tz=UTC),
             bars_used=len(bars),
             regime_compatibility=regime_compatibility,
             rejection_reason=reason,

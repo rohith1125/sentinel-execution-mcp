@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 from typing import ClassVar
 
@@ -76,7 +76,7 @@ class ATRSwingTrendStrategy(StrategyBase):
         e50 = float(ema_50.iloc[-1])
         atr_val = float(atr_series.iloc[-1]) if not atr_series.isna().iloc[-1] else 0.0
         latest_close = float(close.iloc[-1])
-        latest_low = float(low.iloc[-1])
+        _latest_low = float(low.iloc[-1])
         prior_high = float(high.iloc[-2])
 
         lower_band = e50 - _ATR_LOWER_BAND_MULT * atr_val
@@ -204,7 +204,7 @@ class ATRSwingTrendStrategy(StrategyBase):
             supporting_indicators=indicators,
             invalidation_conditions=[
                 f"Price closes below EMA50 ({e50:.2f})" if side == OrderSide.BUY else f"Price closes above EMA50 ({e50:.2f})",
-                f"EMA50 turns flat or reverses direction",
+                "EMA50 turns flat or reverses direction",
                 f"Stop hit at {float(stop):.2f}",
             ],
             max_hold_bars=20,
@@ -219,7 +219,7 @@ class ATRSwingTrendStrategy(StrategyBase):
             strategy_name=self.name,
             symbol=symbol,
             signal=signal,
-            evaluated_at=datetime.now(tz=timezone.utc),
+            evaluated_at=datetime.now(tz=UTC),
             bars_used=len(bars),
             regime_compatibility=compat_score,
         )

@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import logging
 import math
-from datetime import date, datetime, timezone, timedelta
+from datetime import UTC, date, datetime, timedelta
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class ReportGenerator:
     """Generates daily, weekly, and strategy-level performance summaries."""
 
-    def __init__(self, db: "AsyncSession") -> None:
+    def __init__(self, db: AsyncSession) -> None:
         self._db = db
 
     # ------------------------------------------------------------------
@@ -35,14 +35,15 @@ class ReportGenerator:
         - decisions by outcome (approved/rejected/deferred)
         """
         if report_date is None:
-            report_date = datetime.now(tz=timezone.utc).date()
+            report_date = datetime.now(tz=UTC).date()
 
-        day_start = datetime.combine(report_date, datetime.min.time()).replace(tzinfo=timezone.utc)
+        day_start = datetime.combine(report_date, datetime.min.time()).replace(tzinfo=UTC)
         day_end = day_start + timedelta(days=1)
 
         try:
-            from sqlalchemy import select, func
-            from sentinel.db.models import TradeJournal, AuditEvent
+            from sqlalchemy import select
+
+            from sentinel.db.models import AuditEvent, TradeJournal
 
             # Trade stats
             stmt = select(TradeJournal).where(
@@ -120,18 +121,19 @@ class ReportGenerator:
     async def weekly_summary(self, week_ending: date | None = None) -> dict:
         """Aggregated weekly view with trend analysis."""
         if week_ending is None:
-            week_ending = datetime.now(tz=timezone.utc).date()
+            week_ending = datetime.now(tz=UTC).date()
 
         # Week is Mon–Sun; compute week start
         days_since_monday = week_ending.weekday()
         week_start = week_ending - timedelta(days=days_since_monday)
 
-        start_dt = datetime.combine(week_start, datetime.min.time()).replace(tzinfo=timezone.utc)
-        end_dt = datetime.combine(week_ending + timedelta(days=1), datetime.min.time()).replace(tzinfo=timezone.utc)
+        start_dt = datetime.combine(week_start, datetime.min.time()).replace(tzinfo=UTC)
+        end_dt = datetime.combine(week_ending + timedelta(days=1), datetime.min.time()).replace(tzinfo=UTC)
 
         try:
             from sqlalchemy import select
-            from sentinel.db.models import TradeJournal, AuditEvent
+
+            from sentinel.db.models import AuditEvent, TradeJournal
 
             stmt = select(TradeJournal).where(
                 TradeJournal.closed_at >= start_dt,
@@ -157,11 +159,9 @@ class ReportGenerator:
             max_drawdown = 0.0
             for p in sorted(pnls):
                 cumulative += p
-                if cumulative > peak:
-                    peak = cumulative
+                peak = max(peak, cumulative)
                 dd = (peak - cumulative) / peak if peak > 0 else 0.0
-                if dd > max_drawdown:
-                    max_drawdown = dd
+                max_drawdown = max(max_drawdown, dd)
 
             # Strategy breakdown
             strategy_pnl: dict[str, float] = {}
@@ -225,10 +225,11 @@ class ReportGenerator:
         - recent drift signals
         - promotion eligibility status
         """
-        from sqlalchemy import select, desc
+        from sqlalchemy import desc, select
+
         from sentinel.db.models import TradeJournal
 
-        cutoff = datetime.now(tz=timezone.utc) - timedelta(days=days)
+        cutoff = datetime.now(tz=UTC) - timedelta(days=days)
 
         try:
             stmt = (
@@ -300,11 +301,9 @@ class ReportGenerator:
         max_drawdown = 0.0
         for p in pnls:
             cumulative += p
-            if cumulative > peak:
-                peak = cumulative
+            peak = max(peak, cumulative)
             dd = (peak - cumulative) / peak if peak > 0 else 0.0
-            if dd > max_drawdown:
-                max_drawdown = dd
+            max_drawdown = max(max_drawdown, dd)
 
         # Fill rate
         total_orders = sum(t.order_count or 0 for t in trades)
@@ -323,16 +322,15 @@ class ReportGenerator:
             if pnl_val > 0:
                 regime_perf[label]["wins"] += 1
 
-        for label, data in regime_perf.items():
+        for _, data in regime_perf.items():
             count = data["count"]
             data["win_rate"] = data["wins"] / count if count > 0 else 0.0
             data["avg_pnl"] = data["total_pnl"] / count if count > 0 else 0.0
 
         # Promotion eligibility
         from sentinel.governance.criteria import CRITERIA
-        from sentinel.domain.types import StrategyState
         promotion_eligibility: dict[str, bool] = {}
-        metrics = {
+        _metrics = {
             "trade_count": trade_count,
             "win_rate": win_rate,
             "profit_factor": profit_factor,
@@ -356,7 +354,7 @@ class ReportGenerator:
             promotion_eligibility[state.value] = eligible
 
         # Drift signals (reuse governance logic inline)
-        recent_r = r_multiples[:5] if len(r_multiples) >= 5 else r_multiples
+        _recent_r = r_multiples[:5] if len(r_multiples) >= 5 else r_multiples
         drift_signals: list[str] = []
         if len(r_multiples) >= 10:
             recent_5 = sum(r_multiples[:5]) / 5
@@ -407,7 +405,8 @@ class ReportGenerator:
     ) -> list[dict]:
         """Tabular trade history for a time window."""
         try:
-            from sqlalchemy import select, asc
+            from sqlalchemy import asc, select
+
             from sentinel.db.models import TradeJournal
 
             stmt = (

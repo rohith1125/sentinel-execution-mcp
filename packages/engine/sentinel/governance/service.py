@@ -11,12 +11,12 @@ from __future__ import annotations
 
 import logging
 import math
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING
 
 from sentinel.db.models import StrategyPromotion, StrategyRecord
 from sentinel.domain.types import StrategyState
-from sentinel.governance.criteria import CRITERIA, PromotionCriteria
+from sentinel.governance.criteria import CRITERIA
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
@@ -48,7 +48,7 @@ class GovernanceService:
     Suspension and retirement are always permitted regardless of current state.
     """
 
-    def __init__(self, db: "AsyncSession") -> None:
+    def __init__(self, db: AsyncSession) -> None:
         self._db = db
 
     # ------------------------------------------------------------------
@@ -61,7 +61,7 @@ class GovernanceService:
         """Create a new strategy in DRAFT state."""
         import json
 
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=UTC)
         existing = await self.get_strategy(name)
         if existing is not None:
             raise GovernanceError(f"Strategy '{name}' already exists.")
@@ -175,7 +175,7 @@ class GovernanceService:
         Raises GovernanceError if criteria not met.
         Live promotion requires approved_by != 'system'.
         """
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=UTC)
 
         strategy = await self.get_strategy(strategy_name)
         if strategy is None:
@@ -252,7 +252,7 @@ class GovernanceService:
             raise GovernanceError(f"Strategy '{strategy_name}' not found.")
 
         from_state = strategy.state
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=UTC)
         strategy.state = target.value
         strategy.updated_at = now
 
@@ -320,9 +320,10 @@ class GovernanceService:
         avg_slippage_bps, fill_rate, trade_count, avg_hold_hours.
         """
         from sqlalchemy import select
+
         from sentinel.db.models import TradeJournal
 
-        cutoff = datetime.now(tz=timezone.utc) - timedelta(days=days)
+        cutoff = datetime.now(tz=UTC) - timedelta(days=days)
         try:
             stmt = (
                 select(TradeJournal)
@@ -375,11 +376,9 @@ class GovernanceService:
         max_drawdown = 0.0
         for p in pnls:
             cumulative += p
-            if cumulative > peak:
-                peak = cumulative
+            peak = max(peak, cumulative)
             dd = (peak - cumulative) / peak if peak > 0 else 0.0
-            if dd > max_drawdown:
-                max_drawdown = dd
+            max_drawdown = max(max_drawdown, dd)
 
         expectancy_r = sum(r_multiples) / len(r_multiples) if r_multiples else 0.0
         avg_slippage_bps = sum(slippages) / len(slippages) if slippages else 0.0
@@ -433,7 +432,8 @@ class GovernanceService:
 
         Returns: {drifting: bool, signals: list[str], severity: 'ok'|'warn'|'critical'}
         """
-        from sqlalchemy import select, desc
+        from sqlalchemy import desc, select
+
         from sentinel.db.models import TradeJournal
 
         signals: list[str] = []

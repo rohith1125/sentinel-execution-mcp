@@ -8,10 +8,10 @@ from sentinel.strategy.implementations.rsi_mean_reversion import RSIMeanReversio
 from sentinel.strategy.implementations.vwap_reclaim import VWAPReclaimStrategy
 
 __all__ = [
-    "MomentumBreakoutStrategy",
-    "VWAPReclaimStrategy",
-    "EMATrendContinuationStrategy",
-    "RSIMeanReversionStrategy",
     "ATRSwingTrendStrategy",
+    "EMATrendContinuationStrategy",
+    "MomentumBreakoutStrategy",
     "OpeningRangeBreakoutStrategy",
+    "RSIMeanReversionStrategy",
+    "VWAPReclaimStrategy",
 ]

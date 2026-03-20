@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, time, timezone
-from decimal import Decimal
+from datetime import UTC, datetime, time
 
 import pandas as pd
 
@@ -433,7 +432,7 @@ class RegimeClassifier:
             tradeability_score=round(min(1.0, max(0.0, tradeability)), 4),
             supporting_metrics=metrics,
             strategy_compatibility=_make_compatibility(label),
-            classified_at=datetime.now(tz=timezone.utc),
+            classified_at=datetime.now(tz=UTC),
             bars_analyzed=len(bars),
             reasoning=f"[{symbol}] {reasoning}",
         )
@@ -446,7 +445,7 @@ class RegimeClassifier:
             tradeability_score=_TRADEABILITY[RegimeLabel.UNKNOWN],
             supporting_metrics=metrics,
             strategy_compatibility=_make_compatibility(RegimeLabel.UNKNOWN),
-            classified_at=datetime.now(tz=timezone.utc),
+            classified_at=datetime.now(tz=UTC),
             bars_analyzed=len(bars),
             reasoning=f"[{symbol}] UNKNOWN: {reason}",
         )

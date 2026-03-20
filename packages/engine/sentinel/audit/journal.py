@@ -9,10 +9,9 @@ AuditJournal must never raise — exceptions are caught and logged.
 """
 from __future__ import annotations
 
-import json
 import logging
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from sentinel.db.models import AuditEvent, Order, Position, TradeJournal
@@ -32,7 +31,7 @@ class AuditJournal:
     audit failures never interrupt the trading system.
     """
 
-    def __init__(self, db: "AsyncSession") -> None:
+    def __init__(self, db: AsyncSession) -> None:
         self._db = db
 
     # ------------------------------------------------------------------
@@ -53,7 +52,7 @@ class AuditJournal:
     ) -> AuditEvent | None:
         """Record a complete trade decision with all context."""
         try:
-            now = datetime.now(tz=timezone.utc)
+            now = datetime.now(tz=UTC)
             event = AuditEvent(
                 event_type="trade_decision",
                 symbol=symbol,
@@ -90,7 +89,7 @@ class AuditJournal:
         Creates a new event linked to the original (events are never mutated).
         """
         try:
-            now = datetime.now(tz=timezone.utc)
+            now = datetime.now(tz=UTC)
             event = AuditEvent(
                 event_type="execution_outcome",
                 symbol=outcome.get("symbol", ""),
@@ -117,7 +116,7 @@ class AuditJournal:
     ) -> AuditEvent | None:
         """Record a risk halt event."""
         try:
-            now = datetime.now(tz=timezone.utc)
+            now = datetime.now(tz=UTC)
             event = AuditEvent(
                 event_type="risk_halt",
                 symbol=affected_scope,
@@ -150,7 +149,7 @@ class AuditJournal:
     ) -> AuditEvent | None:
         """Record a strategy state transition."""
         try:
-            now = datetime.now(tz=timezone.utc)
+            now = datetime.now(tz=UTC)
             event = AuditEvent(
                 event_type="strategy_promotion",
                 symbol="",
@@ -226,7 +225,7 @@ class AuditJournal:
     ) -> list[AuditEvent]:
         """Fetch recent audit events with optional filters."""
         try:
-            from sqlalchemy import select, desc
+            from sqlalchemy import desc, select
             stmt = select(AuditEvent).order_by(desc(AuditEvent.created_at)).limit(limit)
             if symbol:
                 stmt = stmt.where(AuditEvent.symbol == symbol)
@@ -251,7 +250,7 @@ class AuditJournal:
     ) -> TradeJournal | None:
         """Write completed trade to human-readable journal."""
         try:
-            now = datetime.now(tz=timezone.utc)
+            now = datetime.now(tz=UTC)
 
             pnl: float | None = None
             r_multiple: float | None = None

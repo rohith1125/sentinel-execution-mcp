@@ -10,8 +10,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
-import sys
 from datetime import datetime
 
 from sentinel.auth.service import APIKeyService
@@ -43,7 +41,7 @@ def cmd_list(args: argparse.Namespace) -> None:
     if not clients:
         print("No clients loaded from environment.")
         return
-    for hashed, client in clients.items():
+    for _, client in clients.items():
         print(f"  {client.client_id:20s}  scopes={client.scopes}  active={client.is_active}")
 
 

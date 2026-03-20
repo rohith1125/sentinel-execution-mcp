@@ -48,6 +48,21 @@ test = [
 [tool.hatch.build.targets.wheel]
 packages = ["sentinel"]
 
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "B", "I"]
+ignore = [
+    "B008",  # FastAPI intentionally uses Depends() in defaults
+    "B904",  # raise-without-from inside except — acceptable
+    "E501",  # line length enforced by formatter, not linter
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["F841", "B007"]
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]

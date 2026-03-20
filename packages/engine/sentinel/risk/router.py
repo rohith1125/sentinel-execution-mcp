@@ -84,10 +84,11 @@ async def validate_trade(
     settings: Annotated[Settings, Depends(get_settings)],
 ) -> dict:
     from decimal import Decimal
+
     from sentinel.domain.types import OrderSide
     from sentinel.market.mock import MockProvider
     from sentinel.market.service import MarketDataService
-    from sentinel.risk.firewall import PortfolioState, RiskFirewall
+    from sentinel.risk.firewall import PortfolioState
 
     fw = _get_firewall(request, settings)
 

@@ -2,16 +2,20 @@
 
 from sentinel.backtest.engine import BacktestConfig, BacktestEngine, BacktestResult, BacktestTrade
 from sentinel.backtest.stats import BacktestStats, compute_stats
-from sentinel.backtest.walk_forward import WalkForwardResult, WalkForwardValidator, WalkForwardWindow
+from sentinel.backtest.walk_forward import (
+    WalkForwardResult,
+    WalkForwardValidator,
+    WalkForwardWindow,
+)
 
 __all__ = [
     "BacktestConfig",
     "BacktestEngine",
     "BacktestResult",
-    "BacktestTrade",
     "BacktestStats",
-    "compute_stats",
+    "BacktestTrade",
     "WalkForwardResult",
     "WalkForwardValidator",
     "WalkForwardWindow",
+    "compute_stats",
 ]

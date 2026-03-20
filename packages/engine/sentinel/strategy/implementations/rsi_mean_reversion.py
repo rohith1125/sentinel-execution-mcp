@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 from typing import ClassVar
 
@@ -134,7 +134,7 @@ class RSIMeanReversionStrategy(StrategyBase):
             )
 
         # Find the RSI swing low for stop placement
-        rsi_low_idx = int(rsi_series.iloc[-10:].idxmin()) if hasattr(rsi_series.iloc[-10:], 'idxmin') else -5
+        _rsi_low_idx = int(rsi_series.iloc[-10:].idxmin()) if hasattr(rsi_series.iloc[-10:], 'idxmin') else -5
         try:
             swing_low_price = float(low.iloc[-10:].min())
         except Exception:
@@ -198,7 +198,7 @@ class RSIMeanReversionStrategy(StrategyBase):
             strategy_name=self.name,
             symbol=symbol,
             signal=signal,
-            evaluated_at=datetime.now(tz=timezone.utc),
+            evaluated_at=datetime.now(tz=UTC),
             bars_used=len(bars),
             regime_compatibility=compat_score,
         )

@@ -13,7 +13,7 @@ but fails in OOS is curve-fitted and should NOT be promoted.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date, timezone, datetime
+from datetime import date
 from decimal import Decimal
 
 from sentinel.market.provider import Bar

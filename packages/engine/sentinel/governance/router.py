@@ -2,15 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Any
+from typing import Any
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from sentinel.config import Settings, get_settings
-from sentinel.db.base import get_session, db_session_placeholder
+from sentinel.db.base import db_session_placeholder
 from sentinel.governance.service import GovernanceError, GovernanceService
 
 logger = structlog.get_logger(__name__)

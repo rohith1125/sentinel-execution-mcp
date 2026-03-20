@@ -13,11 +13,11 @@ from __future__ import annotations
 
 import logging
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from sentinel.db.models import Order, Position
+from sentinel.db.models import Order
 from sentinel.domain.types import OrderSide, OrderStatus
 from sentinel.execution.broker import BrokerAdapter, OrderRequest, OrderUpdate
 from sentinel.risk.firewall import PortfolioState, PositionSummary
@@ -43,8 +43,8 @@ class ExecutionService:
     def __init__(
         self,
         broker: BrokerAdapter,
-        db: "AsyncSession",
-        audit_journal: "AuditJournal",
+        db: AsyncSession,
+        audit_journal: AuditJournal,
     ) -> None:
         self._broker = broker
         self._db = db
@@ -57,12 +57,12 @@ class ExecutionService:
     async def submit_order(
         self,
         request: OrderRequest,
-        risk_assessment: "RiskAssessment",
-        decision_result: "DecisionResult",
+        risk_assessment: RiskAssessment,
+        decision_result: DecisionResult,
         sizing_details: dict,
     ) -> OrderUpdate:
         """Full order submission with complete audit trail."""
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=UTC)
 
         # 1. Persist order as PENDING
         db_order = await self._persist_order(request, now)
@@ -147,7 +147,7 @@ class ExecutionService:
                 broker_order_id=order_id,
                 status=OrderStatus.REJECTED,
                 rejection_reason=f"Cancel error: {exc}",
-                timestamp=datetime.now(tz=timezone.utc),
+                timestamp=datetime.now(tz=UTC),
             )
         return update
 
@@ -335,7 +335,7 @@ class ExecutionService:
         if update.filled_avg_price is not None:
             order.filled_avg_price = float(update.filled_avg_price)
         order.rejection_reason = update.rejection_reason
-        order.updated_at = datetime.now(tz=timezone.utc)
+        order.updated_at = datetime.now(tz=UTC)
         try:
             await self._db.flush()
         except Exception:
@@ -346,7 +346,7 @@ class ExecutionService:
 
     async def _get_recent_trades(self, limit: int = 20) -> list[dict]:
         """Fetch recent closed trades from the journal."""
-        from sqlalchemy import select, desc
+        from sqlalchemy import desc, select
         try:
             from sentinel.db.models import TradeJournal
             stmt = (

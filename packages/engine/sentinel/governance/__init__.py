@@ -3,7 +3,7 @@ from sentinel.governance.service import GovernanceError, GovernanceService
 
 __all__ = [
     "CRITERIA",
-    "PromotionCriteria",
-    "GovernanceService",
     "GovernanceError",
+    "GovernanceService",
+    "PromotionCriteria",
 ]

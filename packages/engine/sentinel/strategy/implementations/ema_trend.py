@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 from typing import ClassVar
 
@@ -112,11 +112,10 @@ class EMATrendContinuationStrategy(StrategyBase):
                 if bar_low <= e21_at * (1 + _PULLBACK_TOUCH_TOLERANCE):
                     pullback_found = True
                     break
-            else:
-                # Bearish: high should have touched EMA21 from below
-                if bar_close >= e21_at * (1 - _PULLBACK_TOUCH_TOLERANCE):
-                    pullback_found = True
-                    break
+            # Bearish: high should have touched EMA21 from below
+            elif bar_close >= e21_at * (1 - _PULLBACK_TOUCH_TOLERANCE):
+                pullback_found = True
+                break
 
         if not pullback_found:
             return self._no_signal(
@@ -176,7 +175,7 @@ class EMATrendContinuationStrategy(StrategyBase):
             timeframe=self.default_timeframe,
             supporting_indicators=indicators,
             invalidation_conditions=[
-                f"EMA8 crosses below EMA21",
+                "EMA8 crosses below EMA21",
                 f"Price closes below EMA50 ({e50:.2f})",
                 f"ADX drops below {_ADX_MIN}",
             ],
@@ -193,7 +192,7 @@ class EMATrendContinuationStrategy(StrategyBase):
             strategy_name=self.name,
             symbol=symbol,
             signal=signal,
-            evaluated_at=datetime.now(tz=timezone.utc),
+            evaluated_at=datetime.now(tz=UTC),
             bars_used=len(bars),
             regime_compatibility=compat_score,
         )
