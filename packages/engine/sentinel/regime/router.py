@@ -62,7 +62,9 @@ async def evaluate_regime(
         snap = _classifier.classify(bars, symbol)
         return _snapshot_to_dict(snap)
     except Exception as exc:
-        raise HTTPException(status_code=502, detail=str(exc))
+        msg = str(exc)
+        code = 404 if "not in mock universe" in msg or "not found" in msg.lower() else 502
+        raise HTTPException(status_code=code, detail=msg)
 
 
 @router.post("/evaluate/bulk")

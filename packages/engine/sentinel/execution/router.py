@@ -34,6 +34,15 @@ class PaperOrderRequest(BaseModel):
     side: str  # "buy" | "sell"
     quantity: int
     order_type: str = "market"
+
+    from pydantic import field_validator
+
+    @field_validator("quantity")
+    @classmethod
+    def quantity_must_be_positive(cls, v: int) -> int:
+        if v <= 0:
+            raise ValueError(f"quantity must be positive, got {v}")
+        return v
     limit_price: float | None = None
     stop_price: float | None = None
     time_in_force: str = "day"
@@ -55,6 +64,7 @@ class ResetPaperRequest(BaseModel):
 
 def _update_to_dict(u: Any) -> dict:
     return {
+        "order_id": u.broker_order_id,
         "broker_order_id": u.broker_order_id,
         "client_order_id": u.client_order_id,
         "status": u.status.value,
@@ -72,7 +82,18 @@ async def submit_paper_order(
     settings: Annotated[Settings, Depends(get_settings)],
 ) -> dict:
     from sentinel.execution.broker import OrderRequest
+    from sentinel.risk.firewall import RiskFirewall
     broker = _get_paper_broker(request, settings)
+
+    # Check kill switch before submitting
+    redis = getattr(request.app.state, "redis", None)
+    fw = RiskFirewall(settings=settings, redis_client=redis)
+    ks = await fw.get_kill_switch_state()
+    if ks.global_halt:
+        raise HTTPException(status_code=403, detail="Global halt is active — all order submission blocked")
+    if body.symbol in ks.halted_symbols:
+        raise HTTPException(status_code=403, detail=f"Symbol {body.symbol} is halted")
+
     try:
         side = OrderSide(body.side.lower())
         otype = OrderType(body.order_type.lower())

@@ -77,9 +77,9 @@ async def reconciliation_run(request: Request) -> JSONResponse:
     """Trigger an immediate reconciliation pass."""
     recon = getattr(request.app.state, "reconciler", None)
     if recon is None:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="reconciler not initialised",
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={"message": "reconciler not configured", "is_clean": None, "discrepancies": []},
         )
     result = await recon.reconcile()
     return JSONResponse(

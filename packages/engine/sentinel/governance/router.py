@@ -24,6 +24,7 @@ def _get_service(session: AsyncSession = Depends(db_session_placeholder)) -> Gov
 
 def _record_to_dict(r: Any) -> dict:
     return {
+        "id": getattr(r, "id", None),
         "name": r.name,
         "description": r.description,
         "state": r.state,
