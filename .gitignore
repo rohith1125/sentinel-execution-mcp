@@ -37,3 +37,4 @@ docker/volumes/
 # Database
 *.db
 *.sqlite
+.mcpregistry_*
