@@ -246,7 +246,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 await session.rollback()
                 raise
 
-    app.include_router(watchlist_router, prefix="/api/v1")
+    app.include_router(watchlist_router)
     app.include_router(market_router)
     app.include_router(regime_router)
     app.include_router(strategy_router)
