@@ -72,7 +72,7 @@ async def evaluate_promotion(
     session: AsyncSession = Depends(db_session_placeholder),
 ) -> dict:
     from sentinel.domain.types import StrategyState
-    strategy = body.get("strategy", "")
+    strategy = body.get("strategy_name") or body.get("strategy", "")
     target_raw = body.get("target_state", "")
     try:
         target = StrategyState(target_raw)
@@ -89,7 +89,7 @@ async def promote_strategy(
     session: AsyncSession = Depends(db_session_placeholder),
 ) -> dict:
     from sentinel.domain.types import StrategyState
-    strategy = body.get("strategy", "")
+    strategy = body.get("strategy_name") or body.get("strategy", "")
     target_raw = body.get("target_state", "")
     approved_by = body.get("approved_by", "")
     notes = body.get("notes", "")
@@ -110,7 +110,7 @@ async def suspend_strategy(
     body: dict,
     session: AsyncSession = Depends(db_session_placeholder),
 ) -> dict:
-    strategy = body.get("strategy", "")
+    strategy = body.get("strategy_name") or body.get("strategy", "")
     reason = body.get("reason", "")
     operator = body.get("operator", "system")
     svc = GovernanceService(db=session)

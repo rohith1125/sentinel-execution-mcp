@@ -32,7 +32,7 @@ class ScanWatchlistRequest(BaseModel):
 
 
 class ScanSymbolRequest(BaseModel):
-    symbol: str
+    strategy_name: str | None = None
     strategies: list[str] | None = None
 
 
@@ -76,9 +76,10 @@ async def scan_symbol(
 ) -> list[dict]:
     scanner = _build_scanner(settings or get_settings())
     try:
+        strategy_names = body.strategies or ([body.strategy_name] if body.strategy_name else None)
         results = await scanner.scan(
             symbols=[symbol],
-            strategy_names=body.strategies,
+            strategy_names=strategy_names,
         )
         return [_result_to_dict(r) for r in results]
     except Exception as exc:

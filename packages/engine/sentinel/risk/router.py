@@ -68,10 +68,13 @@ async def get_kill_switch(
 class ValidateRequest(BaseModel):
     symbol: str
     side: str
-    shares: int
-    entry_price: float
-    stop_price: float
-    strategy_name: str
+    quantity: int = 0
+    shares: int = 0  # alias for quantity
+    entry_price: float = 0.0
+    stop_price: float = 0.0
+    strategy_id: str = ""
+    strategy_name: str = ""  # alias for strategy_id
+    signal_confidence: float = 0.8
 
 
 @router.post("/validate")
@@ -112,13 +115,19 @@ async def validate_trade(
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
 
+    qty = body.quantity or body.shares or 1
+    strat = body.strategy_id or body.strategy_name or "unknown"
+    # Use snapshot price as entry if not provided
+    entry_px = body.entry_price or float(snapshot.latest_bar.close) if snapshot.latest_bar else 0.0
+    stop_px = body.stop_price or (entry_px * 0.98)
+
     assessment = await fw.assess(
         symbol=body.symbol,
         side=side,
-        proposed_shares=body.shares,
-        entry_price=Decimal(str(body.entry_price)),
-        stop_price=Decimal(str(body.stop_price)),
-        strategy_name=body.strategy_name,
+        proposed_shares=qty,
+        entry_price=Decimal(str(entry_px)),
+        stop_price=Decimal(str(stop_px)),
+        strategy_name=strat,
         snapshot=snapshot,
         portfolio_state=portfolio_state,
     )
