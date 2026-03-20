@@ -174,3 +174,14 @@ async def halt_symbol(
     fw = _get_firewall(request, settings)
     await fw.halt_symbol(symbol=body.symbol, reason=body.reason, operator=body.operator)
     return {"status": "halted", "symbol": body.symbol}
+
+
+@router.post("/halt/symbol/resume")
+async def resume_symbol(
+    body: SymbolHaltRequest,
+    request: Request,
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> dict:
+    fw = _get_firewall(request, settings)
+    await fw.resume_symbol(symbol=body.symbol, operator=body.operator)
+    return {"status": "resumed", "symbol": body.symbol}

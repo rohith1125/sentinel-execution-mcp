@@ -46,13 +46,13 @@ class ReportGenerator:
 
             # Trade stats
             stmt = select(TradeJournal).where(
-                TradeJournal.closed_at >= day_start,
-                TradeJournal.closed_at < day_end,
+                TradeJournal.exit_timestamp >= day_start,
+                TradeJournal.exit_timestamp < day_end,
             )
             result = await self._db.execute(stmt)
             trades = list(result.scalars().all())
 
-            pnls = [float(t.pnl) for t in trades if t.pnl is not None]
+            pnls = [float(t.realized_pnl) for t in trades if t.realized_pnl is not None]
             wins = [p for p in pnls if p > 0]
             losses = [p for p in pnls if p < 0]
             gross_pnl = sum(pnls)
@@ -62,11 +62,11 @@ class ReportGenerator:
             # Regime distribution
             regime_counts: dict[str, int] = {}
             for t in trades:
-                label = t.regime_label or "unknown"
+                label = t.regime_at_entry or "unknown"
                 regime_counts[label] = regime_counts.get(label, 0) + 1
 
             # Active strategies
-            active_strategies = list({t.strategy_name for t in trades if t.strategy_name})
+            active_strategies = list({t.strategy_id for t in trades if t.strategy_id})
 
             # Audit events for the day (risk events, decisions)
             audit_stmt = select(AuditEvent).where(
@@ -78,10 +78,10 @@ class ReportGenerator:
 
             risk_events = [
                 {
-                    "event_id": e.event_id,
+                    "event_id": e.id,
                     "type": e.event_type,
-                    "outcome": e.outcome,
-                    "explanation": e.explanation,
+                    "outcome": e.decision_outcome,
+                    "explanation": e.decision_explanation,
                     "at": e.created_at.isoformat() if e.created_at else None,
                 }
                 for e in audit_events
@@ -91,7 +91,7 @@ class ReportGenerator:
             decision_outcomes: dict[str, int] = {}
             for e in audit_events:
                 if e.event_type == "trade_decision":
-                    outcome_key = e.outcome or "unknown"
+                    outcome_key = e.decision_outcome or "unknown"
                     decision_outcomes[outcome_key] = decision_outcomes.get(outcome_key, 0) + 1
 
             return {

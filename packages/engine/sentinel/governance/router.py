@@ -32,6 +32,12 @@ def _record_to_dict(r: Any) -> dict:
     }
 
 
+class RegisterRequest(BaseModel):
+    name: str
+    description: str = ""
+    config: dict = {}
+
+
 class PromoteRequest(BaseModel):
     target_state: str
     approved_by: str
@@ -41,6 +47,23 @@ class PromoteRequest(BaseModel):
 class SuspendRequest(BaseModel):
     reason: str
     operator: str
+
+
+@router.post("/strategies")
+async def register_strategy(
+    body: RegisterRequest,
+    session: AsyncSession = Depends(db_session_placeholder),
+) -> dict:
+    svc = GovernanceService(db=session)
+    try:
+        record = await svc.register_strategy(
+            name=body.name,
+            description=body.description,
+            config=body.config,
+        )
+        return _record_to_dict(record)
+    except GovernanceError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
 
 
 @router.post("/evaluate-promotion")
