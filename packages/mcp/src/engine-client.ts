@@ -70,20 +70,20 @@ export class EngineClient {
 
   async addSymbols(symbols: string[], group?: string, notes?: string): Promise<WatchlistEntry[]> {
     return this.request(() =>
-      this.http.post<WatchlistEntry[]>('/watchlist/add', { symbols, group, notes }).then((r) => r.data),
+      this.http.post<WatchlistEntry[]>('/watchlist/symbols', { symbols, group, notes }).then((r) => r.data),
     );
   }
 
   async removeSymbols(symbols: string[]): Promise<{ removed: number }> {
     return this.request(() =>
-      this.http.post<{ removed: number }>('/watchlist/remove', { symbols }).then((r) => r.data),
+      this.http.delete<{ removed: number }>('/watchlist/symbols', { data: { symbols } }).then((r) => r.data),
     );
   }
 
   async listSymbols(group?: string, activeOnly?: boolean): Promise<WatchlistEntry[]> {
     return this.request(() =>
       this.http
-        .get<WatchlistEntry[]>('/watchlist', { params: { group, active_only: activeOnly } })
+        .get<WatchlistEntry[]>('/watchlist/symbols', { params: { group, active_only: activeOnly } })
         .then((r) => r.data),
     );
   }
@@ -96,7 +96,7 @@ export class EngineClient {
 
   async tagSymbols(symbols: string[], group: string): Promise<{ tagged: number }> {
     return this.request(() =>
-      this.http.post<{ tagged: number }>('/watchlist/tag', { symbols, group }).then((r) => r.data),
+      this.http.post<{ tagged: number }>('/watchlist/symbols/tag', { symbols, group }).then((r) => r.data),
     );
   }
 

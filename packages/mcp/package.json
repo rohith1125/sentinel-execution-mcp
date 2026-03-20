@@ -1,6 +1,6 @@
 {
   "name": "sentinel-execution-mcp",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Sentinel Execution MCP — trading control plane MCP interface",
   "mcpName": "io.github.rohith1125/sentinel-execution-mcp",
   "type": "module",
