@@ -127,6 +127,19 @@ async def get_order(
         raise HTTPException(status_code=404, detail=str(exc))
 
 
+@router.get("/orders/open")
+async def get_open_orders(
+    request: Request,
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> list[dict]:
+    broker = _get_paper_broker(request, settings)
+    try:
+        orders = await broker.get_open_orders()
+        return orders
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=str(exc))
+
+
 @router.get("/portfolio")
 async def get_portfolio(
     request: Request,
@@ -184,7 +197,7 @@ async def reset_paper(
 ) -> dict:
     broker = _get_paper_broker(request, settings)
     try:
-        await broker.reset(starting_cash=Decimal(str(body.starting_cash)))
+        await broker.reset_paper_account(starting_cash=Decimal(str(body.starting_cash)))
         return {"status": "reset", "starting_cash": body.starting_cash}
     except Exception as exc:
         raise HTTPException(status_code=502, detail=str(exc))

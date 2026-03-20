@@ -234,7 +234,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     from functools import partial
 
-    from fastapi import Depends
     from sqlalchemy.ext.asyncio import AsyncSession
 
     async def db_session() -> Any:  # type: ignore[return]
